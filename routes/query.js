@@ -31,8 +31,7 @@ router.post('/', async (req, res, next) => {
     res.send(results)
   }
   catch (err) { // a dumb catch-all for Tiny Stuff
-    console.log(err)
-    res.status(500).send("Caught " + err)
+    next(err)
   }
 })
 

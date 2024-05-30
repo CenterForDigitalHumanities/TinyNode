@@ -21,11 +21,10 @@ router.post('/', async (req, res, next) => {
     .catch(err=>next(err))
     res.setHeader("Location", result["@id"])
     res.status(201)
-    res.send(result)
+    res.json(result)
   }
   catch (err) {
-    console.log(err)
-    res.status(500).send("Caught Error:" + err)
+    next(err)
   }
 })
 

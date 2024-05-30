@@ -9,9 +9,9 @@ router.put('/', rerumPropertiesWasher, async (req, res, next) => {
     // check body for JSON
     const body = JSON.stringify(req.body)
 
-    // check for @id; any value is valid
-    if (!(req.body['@id'])) {
-      throw Error("No record id to update! (https://centerfordigitalhumanities.github.io/rerum_server/API.html#update)")
+    // check for @id in body.  Any value is valid.  Lack of value is a bad request.
+    if (!req?.body || !(req.body['@id'] ?? req.body.id)) {
+      res.status(400).send("No record id to update! (https://centerfordigitalhumanities.github.io/rerum_server/API.html#update)")
     }
 
     const updateOptions = {
@@ -30,8 +30,7 @@ router.put('/', rerumPropertiesWasher, async (req, res, next) => {
     res.send(result)
   }
   catch (err) {
-    console.log(err)
-    res.status(500).send("Caught Error:" + err)
+    next(err)
   }
 })
 

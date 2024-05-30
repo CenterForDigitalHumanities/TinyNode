@@ -19,8 +19,11 @@
   },
   "scripts": {
     "start": "node ./bin/tinyNode.js",
-    "test": "jest",
-    "runtest": "node --experimental-vm-modules ./bin/testApp.js"
+    "allTests": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "E2Etests": "node --experimental-vm-modules node_modules/jest/bin/jest.js -t __e2e ",
+    "existsTests": "node --experimental-vm-modules node_modules/jest/bin/jest.js -t __exists ",
+    "coreTests": "node --experimental-vm-modules node_modules/jest/bin/jest.js -t __core ",
+    "functionalTests": "node --experimental-vm-modules node_modules/jest/bin/jest.js -t __mock_functions "
   },
   "dependencies": {
     "cors": "^2.8.5",

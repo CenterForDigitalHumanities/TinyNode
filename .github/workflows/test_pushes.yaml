@@ -1,0 +1,45 @@
+name: TinyNode tests on any push to a branch without an open PR
+on:
+  push:
+    branches:
+      - '*'
+      - '!main'
+      - '!release'
+jobs:
+  check_for_open_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set the branch name as a processable string by making it an env variable.
+        run: echo BranchName=${GITHUB_REF##*/} >> $GITHUB_ENV
+      - name: Find Pull Request
+        uses: juliangruber/find-pull-request-action@v1
+        id: find-pull-request
+        with:
+          branch: ${{ env.BranchName }}
+      - name: Make the PR number a processable string.  Output that string for the next job.
+        run: |
+          echo Name $BranchName
+          echo PRnumber=${{steps.find-pull-request.outputs.number}} >> $GITHUB_ENV
+    outputs: 
+      number: ${{ env.PRnumber }}
+  test:
+    strategy:
+      matrix:
+        machines:
+          - vlcdhp02
+    runs-on: ${{ matrix.machines }}
+    needs:
+      - check_for_open_pr
+    if: needs.check_for_open_pr.outputs.number == ''
+    steps:
+      - uses: actions/checkout@master
+      - name: Test the app on the server
+        run: |
+          cd /srv/node/tiny-node/
+          git stash
+          git pull
+          git checkout $GITHUB_REF
+          git pull
+          npm install
+          npm run coreTests
+          

@@ -1,54 +1,37 @@
-name: TinyNode Dev Deploy on PR to main
+name: TinyNode Dev Deploy on push to main
 on:
-  pull_request:
+  push:
     branches: main
 jobs:
   merge-branch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - name: Merge with main
+      - name: Merge with release
         uses: devmasx/merge-branch@master
         with:
           type: now
-          from_branch: main
-          target_branch: ${{ github.head_ref }}
+          from_branch: release
+          target_branch: main
           github_token: ${{ secrets.BRY_PAT }}
           message: Merge main into this branch to deploy to dev for testing.
   test:
     needs: merge-branch
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        machines:
+          - vlcdhp02
+    runs-on: ${{ matrix.machines }}
     steps:
       - uses: actions/checkout@master
-      - name: Create .env from secrets
-        uses: SpicyPizza/create-envfile@v2
-        with:
-          envkey_ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          envkey_REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
-          envkey_RERUM_REGISTRATION_URL: ${{ secrets.RERUM_REGISTRATION_URL }}
-          envkey_RERUM_API_ADDR: ${{ secrets.RERUM_API_ADDR }}
-          envkey_RERUM_ID_PATTERN: ${{ secrets.RERUM_ID_PATTERN }}
-          envkey_RERUM_ACCESS_TOKEN_URL: ${{ secrets.RERUM_ACCESS_TOKEN_URL }}
-      - name: Setup Node.js
-        uses: actions/setup-node@master
-        with:
-          node-version: "21"
-      - name: Cache node modules
-        uses: actions/cache@master
-        env:
-          cache-name: cache-node-modules
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{
-            hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-      - name: Install dependencies and run the test
+      - name: Test the app on the server
         run: |
+          cd /srv/node/tiny-node/
+          git stash
+          git checkout main
+          git pull
           npm install
-          npm run runtest
+          npm run allTests
   deploy:
     if: github.event.pull_request.draft == false
     needs:
@@ -70,6 +53,7 @@ jobs:
           cd /srv/node/tiny-node/
           pm2 stop tinyNode
           git stash
+          git checkout main
           git pull
           npm install
           pm2 start -i max bin/tinyNode.js

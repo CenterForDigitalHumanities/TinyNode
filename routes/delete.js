@@ -16,15 +16,13 @@ router.delete('/', async (req, res, next) => {
         'Content-Type' : "application/json; charset=utf-8"
       }
     }
-    console.log(body)
     const deleteURL = `${process.env.RERUM_API_ADDR}delete`
     const result = await fetch(deleteURL, deleteOptions).then(res => res.text())
     res.status(204)
     res.send(result)
   }
   catch (err) {
-    console.log(err)
-    res.status(500).send("Caught Error:" + err)
+    next(err)
   }
 })
 
@@ -46,8 +44,7 @@ router.delete('/:id', async (req, res, next) => {
     res.send(result)
   }
   catch (err) {
-    console.log(err)
-    res.status(500).send("Caught Error:" + err)
+    next(err)
   }
 })
 

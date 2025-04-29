@@ -62,6 +62,8 @@ OPEN_API_CORS = true
 # 🌟👍 Contributors 👍🌟
 Trying to contribute to the public TinyThings?  No way, that's awesome.  Read the [Contributors Guide](CONTRIBUTING.md)!
 
+ok
+
 # Who is to blame?
 The developers in the Research Computing Group at Saint Louis University authored and maintain this template in connection with the RERUM API service.
 Neither specific warranty nor rights are associated with RERUM; registering and contributing implies only those rights 

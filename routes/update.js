@@ -25,7 +25,7 @@ router.put('/', checkAccessToken, rerumPropertiesWasher, async (req, res, next) 
     const updateURL = `${process.env.RERUM_API_ADDR}update`
     const result = await fetch(updateURL, updateOptions).then(res=>res.json())
     .catch(err=>next(err))
-    res.setHeader("Location", result["@id"])
+    res.setHeader("Location", result["@id"] ?? result.id)
     res.status(200)
     res.send(result)
   }

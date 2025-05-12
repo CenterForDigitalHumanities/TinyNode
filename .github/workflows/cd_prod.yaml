@@ -37,11 +37,19 @@ jobs:
               mkdir -p /srv/node/logs
               touch /srv/node/logs/tinynode.txt
           fi
-          echo $USER
+          echo "LOCAL PATH"
           echo $PATH
+          echo "NVM DIR and BIN"
+          echo $NVM_DIR
+          echo $NVM_BIN
+          echo "WHERE and WHICH"
           pwd
-          which pm2
           which node
+          which npm
+          which pm2
+          pm2 -v
+          npm -v
+          node -v
           cd /srv/node/tiny-node/
           pm2 stop tinyNode
           git stash

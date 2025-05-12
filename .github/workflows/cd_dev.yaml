@@ -71,8 +71,6 @@ jobs:
               mkdir -p /srv/node/logs
               touch /srv/node/logs/tinynode.txt
           fi
-          echo "GH ENV"
-          echo $GITHUB_ENV
           echo "LOCAL PATH"
           echo $PATH
           echo "NVM DIR and BIN"
@@ -83,7 +81,9 @@ jobs:
           which node
           which npm
           which pm2
-
+          pm2 -v
+          npm -v
+          node -v
           cd /srv/node/tiny-node/
           pm2 stop tinyNode
           git stash

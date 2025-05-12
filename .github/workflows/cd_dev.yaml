@@ -71,6 +71,10 @@ jobs:
               mkdir -p /srv/node/logs
               touch /srv/node/logs/tinynode.txt
           fi
+          echo $USER
+          echo $PATH
+          pwd
+          which pm2
           cd /srv/node/tiny-node/
           pm2 stop tinyNode
           git stash

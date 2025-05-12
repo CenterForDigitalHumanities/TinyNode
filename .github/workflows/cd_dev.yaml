@@ -75,6 +75,7 @@ jobs:
           echo $PATH
           pwd
           which pm2
+          which node
           cd /srv/node/tiny-node/
           pm2 stop tinyNode
           git stash

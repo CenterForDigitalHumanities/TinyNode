@@ -73,7 +73,7 @@ jobs:
           fi
           echo "GH ENV"
           echo $GITHUB_ENV
-          echo "LOCATE PATH"
+          echo "LOCAL PATH"
           echo $PATH
           echo "NVM DIR and BIN"
           echo $NVM_DIR

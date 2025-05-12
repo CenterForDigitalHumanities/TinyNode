@@ -65,6 +65,11 @@ jobs:
     runs-on: ${{ matrix.machines }}
     steps:
       - uses: actions/checkout@master
+      - name: Debug Environment
+        run: |
+          echo "PATH: $PATH"
+          echo "SHELL: $SHELL"
+        shell: bash
       - name: Deploy the app on the server
         run: |
           if [[ ! -e /srv/node/logs/tinynode.txt ]]; then

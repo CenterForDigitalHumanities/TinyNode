@@ -1,8 +1,10 @@
 import express from "express"
+import checkAccessToken from "../tokens.js"
 const router = express.Router()
+import rerumPropertiesWasher from "../preprocessor.js"
 
 /* PUT an overwrite to the thing. */
-router.put('/', async (req, res, next) => {
+router.put('/', checkAccessToken, rerumPropertiesWasher, async (req, res, next) => {
 
   try {
     
@@ -16,22 +18,21 @@ router.put('/', async (req, res, next) => {
       method: 'PUT',
       body: JSON.stringify(overwriteBody),
       headers: {
-        'user-agent': 'TinyPen',
-        'Origin': process.env.ORIGIN,
+        'user-agent': 'Tiny-Things/1.0',
         'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
         'Content-Type' : "application/json;charset=utf-8"
       }
     }
 
     // Pass through If-Overwritten-Version header if present
-    const ifOverwrittenVersion = req.headers['if-overwritten-version']
-    if (ifOverwrittenVersion) {
+    const ifOverwrittenVersion = req.headers.hasOwnProperty('if-overwritten-version') ? req.headers['if-overwritten-version'] : null
+    if (ifOverwrittenVersion !== null) {
       overwriteOptions.headers['If-Overwritten-Version'] = ifOverwrittenVersion
     }
 
     // Check for __rerum.isOverwritten in body and use as If-Overwritten-Version header
-    const isOverwrittenValue = req.body?.__rerum?.isOverwritten
-    if (isOverwrittenValue) {
+    const isOverwrittenValue = req.body?.__rerum?.hasOwnProperty("isOverwritten") ? req.body.__rerum.isOverwritten : null
+    if (isOverwrittenValue !== null) {
       overwriteOptions.headers['If-Overwritten-Version'] = isOverwrittenValue
     }
 
@@ -61,6 +62,10 @@ router.put('/', async (req, res, next) => {
   catch (err) {
     res.status(500).send("Caught Error:" + err)
   }
+})
+
+router.all('/', (req, res, next) => {
+  res.status(405).send("Method Not Allowed")
 })
 
 export default router

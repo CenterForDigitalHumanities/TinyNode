@@ -1,6 +1,5 @@
 
 import { jest } from "@jest/globals"
-process.env.RERUM_ID_PATTERN = "https://devstore.rerum.io/v1/id/"
 import express from "express"
 import request from "supertest"
 import overwriteRoute from "../overwrite.js"

@@ -1,17 +1,17 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
 const router = express.Router()
-import rerumPropertiesWasher from "../preprocessor.js"
 
 /* PUT an overwrite to the thing. */
-router.put('/', checkAccessToken, rerumPropertiesWasher, async (req, res, next) => {
+router.put('/', checkAccessToken, async (req, res, next) => {
 
   try {
     
     const overwriteBody = req.body
     // check for @id; any value is valid
     if (!(overwriteBody['@id'] ?? overwriteBody.id)) {
-      throw Error("No record id to overwrite! (https://store.rerum.io/API.html#overwrite)")
+      res.status(400).send("No record id to overwrite! (https://store.rerum.io/API.html#overwrite)")
+      return
     }
 
     const overwriteOptions = {

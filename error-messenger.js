@@ -1,0 +1,26 @@
+/**
+ * Errors from RERUM are a response code with a text body (except those handled specifically upstream)
+ * We want to send the same error and message through.  It is assumed to be RESTful and useful.
+ * This will also handle app level 404 errors.
+ *
+ * @param rerum_error_res An Express Response object from a request to RERUM that encountered an error.  Explanatory text is in .text().
+ */
+export async function messenger(rerum_error_res, req, res, next) {
+    if (res.headersSent) {
+        return
+    }
+    let error = {}
+    let rerum_err_text
+    try{
+        rerum_err_text = await rerum_error_res.text()
+    }
+    catch(err) {
+        rerum_err_text = undefined
+    }
+    if(rerum_err_text) error.message = rerum_err_text
+    else { error.message = rerum_error_res.statusMessage ?? rerum_error_res.message ?? `An unhandled error occured, perhaps with RERUM.` }
+    error.status = rerum_error_res.statusCode ?? rerum_error_res.status ?? 500
+    console.error(error)
+    res.set("Content-Type", "text/plain; charset=utf-8")
+    res.status(error.status).send(error.message)
+}

@@ -23,7 +23,15 @@ router.delete('/', checkAccessToken, async (req, res, next) => {
       }
     }
     const deleteURL = `${process.env.RERUM_API_ADDR}delete`
-    const result = await fetch(deleteURL, deleteOptions).then(res => res.text())
+    let errorState = false
+    const result = await fetch(deleteURL, deleteOptions).then(res=>{
+      if(!res.ok) errorState = true
+      return res.text()
+    })
+    .catch(err => {
+      throw err
+    })
+    if (errorState) return next(results)
     res.status(204)
     res.send(result)
   }
@@ -44,8 +52,15 @@ router.delete('/:id', async (req, res, next) => {
         'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
       }
     }
-    const result = await fetch(deleteURL, deleteOptions).then(res => res.text())
-    .catch(err=>next(err))
+    let errorState = false
+    const result = await fetch(deleteURL, deleteOptions).then(res => {
+      if(!res.ok) errorState = true
+      return res
+    })
+    .catch(err => {
+      throw err
+    })
+    if (errorState) return next(results)
     res.status(204)
     res.send(result)
   }

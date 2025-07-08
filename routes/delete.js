@@ -10,6 +10,7 @@ router.delete('/', checkAccessToken, async (req, res, next) => {
     // check for @id in body.  Any value is valid.  Lack of value is a bad request.
     if (!req?.body || !(req.body['@id'] ?? req.body.id)) {
       res.status(400).send("No record id to delete! (https://store.rerum.io/v1/API.html#delete)")
+      return
     }
     const body = JSON.stringify(req.body)
     const deleteOptions = {

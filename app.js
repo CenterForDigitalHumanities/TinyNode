@@ -39,7 +39,8 @@ if(process.env.OPEN_API_CORS !== "false") {
         'X-HTTP-Method-Override',
         'Origin',
         'Referrer',
-        'User-Agent'
+        'User-Agent',
+        'If-Overwritten-Version'
       ],
       "exposedHeaders" : "*",
       "origin" : "*",

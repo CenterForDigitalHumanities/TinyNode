@@ -1,15 +1,15 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
 const router = express.Router()
-import rerumPropertiesWasher from "../preprocessor.js"
 
 /* PUT an update to the thing. */
-router.put('/', checkAccessToken, rerumPropertiesWasher, async (req, res, next) => {
+router.put('/', checkAccessToken, async (req, res, next) => {
 
   try {
     // check for @id in body.  Any value is valid.  Lack of value is a bad request.
     if (!req?.body || !(req.body['@id'] ?? req.body.id)) {
       res.status(400).send("No record id to update! (https://store.rerum.io/v1/API.html#update)")
+      return
     }
     // check body for JSON
     const body = JSON.stringify(req.body)

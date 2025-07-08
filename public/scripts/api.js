@@ -208,6 +208,10 @@ function overwrite(form, objIn) {
         _customEvent("rerum-result", `URI ${uri} overwritten. See resulting object below:`, resultObj)
     })
     .catch(err => {
+        if (err?.status === 409) {
+            _customEvent("rerum-error", "Conflict detected while trying to overwrite object at " + uri, err.currentVersion, err)
+            return
+        }
         _customEvent("rerum-error", "There was an error trying to overwrite object at " + uri, {}, err)
     })
 }

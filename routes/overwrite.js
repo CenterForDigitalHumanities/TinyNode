@@ -60,7 +60,7 @@ router.put('/', checkAccessToken, async (req, res, next) => {
     res.json(result)
   }
   catch (err) {
-    res.status(500).send("Caught Error:" + err)
+    next(err)
   }
 })
 

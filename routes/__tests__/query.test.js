@@ -38,7 +38,7 @@ beforeEach(() => {
  * 
  * Note: /app/query uses the same logic and would be a redundant test.
  */
-describe("Check that the request/response behavior of the TinyNode query route functions.  Mock the connection to RERUM.  __mock_functions_q", () => {
+describe("Check that the request/response behavior of the TinyNode query route functions.  Mock the connection to RERUM.  __mock_functions", () => {
   it("'/query' route request and response behavior is functioning.", async () => {
     const response = await request(routeTester)
       .post("/query")
@@ -46,9 +46,6 @@ describe("Check that the request/response behavior of the TinyNode query route f
       .set("Content-Type", "application/json")
       .then(resp => resp)
       .catch(err => err)
-      console.log(response.statusCode)
-      console.log(response.status)
-      console.log(response.body)
     expect(response.statusCode).toBe(200)
     expect(response.body[0].test).toBe("item")
   })

@@ -3,7 +3,7 @@
  * We want to send the same error and message through.  It is assumed to be RESTful and useful.
  * This will also handle app level 404 errors.
  *
- * @param rerum_error_res An Express Response object from a request to RERUM that encountered an error.  Explanatory text is in .text().
+ * @param rerum_error_res A Fetch API Response object from a fetch() to RERUM that encountered an error.  Explanatory text is in .text().
  * @param req The Express Request object from the request into TinyNode
  * @param res The Express Response object to send out of TinyNode
  * @param next The Express next() operator, unused here but required to support the middleware chain.

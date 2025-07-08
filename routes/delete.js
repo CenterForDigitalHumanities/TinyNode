@@ -23,15 +23,15 @@ router.delete('/', checkAccessToken, async (req, res, next) => {
       }
     }
     const deleteURL = `${process.env.RERUM_API_ADDR}delete`
-    let errorState = false
+    let errored = false
     const result = await fetch(deleteURL, deleteOptions).then(res=>{
-      if(!res.ok) errorState = true
+      if(!res.ok) errored = true
       return res.text()
     })
     .catch(err => {
       throw err
     })
-    if (errorState) return next(results)
+    if (errored) return next(results)
     res.status(204)
     res.send(result)
   }
@@ -52,15 +52,16 @@ router.delete('/:id', async (req, res, next) => {
         'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
       }
     }
-    let errorState = false
+    let errored = false
     const result = await fetch(deleteURL, deleteOptions).then(res => {
-      if(!res.ok) errorState = true
+      if(!res.ok) errored = true
       return res
     })
     .catch(err => {
       throw err
     })
-    if (errorState) return next(results)
+    // Send RERUM error responses to to error-messenger.js
+    if (errored) return next(results)
     res.status(204)
     res.send(result)
   }

@@ -4,6 +4,9 @@
  * This will also handle app level 404 errors.
  *
  * @param rerum_error_res An Express Response object from a request to RERUM that encountered an error.  Explanatory text is in .text().
+ * @param req The Express Request object from the request into TinyNode
+ * @param res The Express Response object to send out of TinyNode
+ * @param next The Express next() operator, unused here but required to support the middleware chain.
  */
 export async function messenger(rerum_error_res, req, res, next) {
     if (res.headersSent) {

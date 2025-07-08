@@ -25,16 +25,17 @@ router.post('/', async (req, res, next) => {
       }
     }
     const queryURL = `${process.env.RERUM_API_ADDR}query?limit=${lim}&skip=${skip}`
-    let errorState = false
+    let errored = false
     const results = await fetch(queryURL, queryOptions).then(res=>{
       if(res.ok) return res.json()
-      errorState = true
+      errored = true
       return res
     })
     .catch(err => {
       throw err
     })
-    if (errorState) return next(results)
+    // Send RERUM error responses to to error-messenger.js
+    if (errored) return next(results)
     res.status(200)
     res.send(results)
   }

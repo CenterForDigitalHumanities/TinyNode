@@ -37,12 +37,13 @@ router.put('/', checkAccessToken, async (req, res, next) => {
     }
 
     const overwriteURL = `${process.env.RERUM_API_ADDR}overwrite`
-    let errorState = false
+    let errored = false
     const response = await fetch(overwriteURL, overwriteOptions)
     .then(async rerum_res=>{
       if(rerum_res.ok) return rerum_res.json()
-      errorState = true
+      errored = true
       if(rerum_res.headers.get("Content-Type").includes("json")) {
+        // Special handling.  This does not go through to error-messenger.js
         if (rerum_res.status === 409) {
           const currentVersion = await rerum_res.json()
           return res.status(409).json(currentVersion)
@@ -53,7 +54,8 @@ router.put('/', checkAccessToken, async (req, res, next) => {
     .catch(err => {
       throw err
     })
-    if (errorState) return next(response)
+    // Send RERUM error responses to to error-messenger.js
+    if (errored) return next(response)
     const result = await response.json()
     const location = result?.["@id"] ?? result?.id
     if (location) {

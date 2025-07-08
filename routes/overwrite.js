@@ -63,8 +63,6 @@ router.put('/', checkAccessToken, async (req, res, next) => {
     res.json(result)
   }
   catch (err) {
-    console.log("O-CAUGHT")
-    console.log(err)
     next(err)
   }
 })

@@ -60,7 +60,7 @@ router.delete('/:id', async (req, res, next) => {
     .catch(err => {
       throw err
     })
-    // Send RERUM error responses to to error-messenger.js
+    // Send RERUM error responses to error-messenger.js
     if (errored) return next(results)
     res.status(204)
     res.send(result)

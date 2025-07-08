@@ -32,7 +32,7 @@ router.put('/', checkAccessToken, async (req, res, next) => {
     .catch(err => {
       throw err
     })
-    // Send RERUM error responses to to error-messenger.js
+    // Send RERUM error responses to error-messenger.js
     if (errored) return next(result)
     res.setHeader("Location", result["@id"] ?? result.id)
     res.status(200)

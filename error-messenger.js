@@ -1,6 +1,6 @@
 /**
  * Errors from RERUM are a response code with a text body (except those handled specifically upstream)
- * We want to send the same error and message through.  It is assumed to be RESTful and useful.
+ * We want to send the same error code and message through.  It is assumed to be RESTful and useful.
  * This will also handle generic (500) app level errors, as well as app level 404 errors.
  *
  * @param rerum_error_res A Fetch API Response object from a fetch() to RERUM that encountered an error.  Explanatory text is in .text().

@@ -1,7 +1,7 @@
 /**
  * Errors from RERUM are a response code with a text body (except those handled specifically upstream)
  * We want to send the same error and message through.  It is assumed to be RESTful and useful.
- * This will also handle app level 404 errors.
+ * This will also handle generic (500) app level errors, as well as app level 404 errors.
  *
  * @param rerum_error_res A Fetch API Response object from a fetch() to RERUM that encountered an error.  Explanatory text is in .text().
  * @param req The Express Request object from the request into TinyNode
@@ -22,6 +22,7 @@ export async function messenger(rerum_error_res, req, res, next) {
     }
     if (rerum_err_text) error.message = rerum_err_text
     else { 
+        // Perhaps this is a more generic 500 from the app and there is no good rerum_error_res
         error.message = rerum_error_res.statusMessage ?? rerum_error_res.message ?? `An unhandled error occured, perhaps with RERUM.` 
     }
     error.status = rerum_error_res.statusCode ?? rerum_error_res.status ?? 500

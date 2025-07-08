@@ -69,7 +69,7 @@ app.use('/app/update', updateRouter)
 app.use('/app/delete', deleteRouter)
 app.use('/app/overwrite', overwriteRouter)
 
-// RERUM error response handler, and app 404s
+// RERUM error response handler, as well as unhandled generic app error handler
 app.use(messenger)
 
 export default app

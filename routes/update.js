@@ -25,7 +25,7 @@ router.put('/', checkAccessToken, async (req, res, next) => {
     const updateURL = `${process.env.RERUM_API_ADDR}update`
     let errored = false
     const result = await fetch(updateURL, updateOptions).then(res=>{
-      if(res.ok) return res.json()
+      if (res.ok) return res.json()
       errored = true
       return res
     })

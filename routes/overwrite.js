@@ -40,9 +40,9 @@ router.put('/', checkAccessToken, async (req, res, next) => {
     let errored = false
     const response = await fetch(overwriteURL, overwriteOptions)
     .then(async rerum_res=>{
-      if(rerum_res.ok) return rerum_res.json()
+      if (rerum_res.ok) return rerum_res.json()
       errored = true
-      if(rerum_res.headers.get("Content-Type").includes("json")) {
+      if (rerum_res.headers.get("Content-Type").includes("json")) {
         // Special handling.  This does not go through to error-messenger.js
         if (rerum_res.status === 409) {
           const currentVersion = await rerum_res.json()

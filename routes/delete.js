@@ -25,7 +25,7 @@ router.delete('/', checkAccessToken, async (req, res, next) => {
     const deleteURL = `${process.env.RERUM_API_ADDR}delete`
     let errored = false
     const result = await fetch(deleteURL, deleteOptions).then(res=>{
-      if(!res.ok) errored = true
+      if (!res.ok) errored = true
       return res.text()
     })
     .catch(err => {

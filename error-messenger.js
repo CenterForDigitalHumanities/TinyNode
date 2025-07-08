@@ -14,14 +14,16 @@ export async function messenger(rerum_error_res, req, res, next) {
     }
     let error = {}
     let rerum_err_text
-    try{
+    try {
         rerum_err_text = await rerum_error_res.text()
     }
-    catch(err) {
+    catch (err) {
         rerum_err_text = undefined
     }
-    if(rerum_err_text) error.message = rerum_err_text
-    else { error.message = rerum_error_res.statusMessage ?? rerum_error_res.message ?? `An unhandled error occured, perhaps with RERUM.` }
+    if (rerum_err_text) error.message = rerum_err_text
+    else { 
+        error.message = rerum_error_res.statusMessage ?? rerum_error_res.message ?? `An unhandled error occured, perhaps with RERUM.` 
+    }
     error.status = rerum_error_res.statusCode ?? rerum_error_res.status ?? 500
     console.error(error)
     res.set("Content-Type", "text/plain; charset=utf-8")

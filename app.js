@@ -18,6 +18,7 @@ let app = express()
 
 app.use(logger('dev'))
 app.use(express.json())
+app.use(express.text())
 if(process.env.OPEN_API_CORS !== "false") { 
   // This enables CORS for all requests. We may want to update this in the future and only apply to some routes.
   app.use(

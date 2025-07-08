@@ -1,10 +1,8 @@
 import express from "express"
-import checkAccessToken from "../tokens.js"
 const router = express.Router()
-import rerumPropertiesWasher from "../preprocessor.js"
 
 /* PUT an overwrite to the thing. */
-router.put('/', checkAccessToken, rerumPropertiesWasher, async (req, res, next) => {
+router.put('/', async (req, res, next) => {
 
   try {
     
@@ -18,7 +16,8 @@ router.put('/', checkAccessToken, rerumPropertiesWasher, async (req, res, next) 
       method: 'PUT',
       body: JSON.stringify(overwriteBody),
       headers: {
-        'user-agent': 'Tiny-Things/1.0',
+        'user-agent': 'TinyPen',
+        'Origin': process.env.ORIGIN,
         'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
         'Content-Type' : "application/json;charset=utf-8"
       }
@@ -52,20 +51,16 @@ router.put('/', checkAccessToken, rerumPropertiesWasher, async (req, res, next) 
     })
     if(res.headersSent) return
     const result = await response.json()
-    if(response.status === 200) {
-      res.setHeader("Location", result["@id"] ?? result.id)
-      res.status(200)
+    const location = result?.["@id"] ?? result?.id
+    if (location) {
+      res.setHeader("Location", location)
     }
-    res.send(result)
+    res.status(response.status ?? 200)
+    res.json(result)
   }
   catch (err) {
-    console.log(err)
     res.status(500).send("Caught Error:" + err)
   }
-})
-
-router.all('/', (req, res, next) => {
-  res.status(405).send("Method Not Allowed")
 })
 
 export default router

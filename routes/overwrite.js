@@ -7,30 +7,60 @@ import rerumPropertiesWasher from "../preprocessor.js"
 router.put('/', checkAccessToken, rerumPropertiesWasher, async (req, res, next) => {
 
   try {
-    // check for @id in body.  Any value is valid.  Lack of value is a bad request.
-    if (!req?.body || !(req.body['@id'] ?? req.body.id)) {
-      res.status(400).send("No record id to overwrite! (https://store.rerum.io/v1/API.html#overwrite)")
+    
+    const overwriteBody = req.body
+    // check for @id; any value is valid
+    if (!(overwriteBody['@id'] ?? overwriteBody.id)) {
+      throw Error("No record id to overwrite! (https://store.rerum.io/API.html#overwrite)")
     }
-    // check body for JSON
-    const body = JSON.stringify(req.body)
+
     const overwriteOptions = {
       method: 'PUT',
-      body,
+      body: JSON.stringify(overwriteBody),
       headers: {
         'user-agent': 'Tiny-Things/1.0',
         'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
         'Content-Type' : "application/json;charset=utf-8"
       }
     }
+
+    // Pass through If-Overwritten-Version header if present
+    const ifOverwrittenVersion = req.headers['if-overwritten-version']
+    if (ifOverwrittenVersion) {
+      overwriteOptions.headers['If-Overwritten-Version'] = ifOverwrittenVersion
+    }
+
+    // Check for __rerum.isOverwritten in body and use as If-Overwritten-Version header
+    const isOverwrittenValue = req.body?.__rerum?.isOverwritten
+    if (isOverwrittenValue) {
+      overwriteOptions.headers['If-Overwritten-Version'] = isOverwrittenValue
+    }
+
     const overwriteURL = `${process.env.RERUM_API_ADDR}overwrite`
-    const result = await fetch(overwriteURL, overwriteOptions).then(res=>res.json())
-    .catch(err=>next(err))
-    res.setHeader("Location", result["@id"] ?? result.id)
-    res.status(200)
+    const response = await fetch(overwriteURL, overwriteOptions)
+    .then(resp=>{
+      if (!resp.ok) throw resp
+      return resp
+    })
+    .catch(async err => {
+      // Handle 409 conflict error for version mismatch
+      if (err.status === 409) {
+        const currentVersion = await err.json()
+        return res.status(409).json(currentVersion)
+      }
+      throw new Error(`Error in overwrite request: ${err.status} ${err.statusText}`)
+    })
+    if(res.headersSent) return
+    const result = await response.json()
+    if(response.status === 200) {
+      res.setHeader("Location", result["@id"] ?? result.id)
+      res.status(200)
+    }
     res.send(result)
   }
-  catch (err) {    
-    next(err)
+  catch (err) {
+    console.log(err)
+    res.status(500).send("Caught Error:" + err)
   }
 })
 

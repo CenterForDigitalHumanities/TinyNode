@@ -23,8 +23,17 @@ router.put('/', checkAccessToken, async (req, res, next) => {
       }
     }
     const updateURL = `${process.env.RERUM_API_ADDR}update`
-    const result = await fetch(updateURL, updateOptions).then(res=>res.json())
-    .catch(err=>next(err))
+    let errored = false
+    const result = await fetch(updateURL, updateOptions).then(res=>{
+      if (res.ok) return res.json()
+      errored = true
+      return res
+    })
+    .catch(err => {
+      throw err
+    })
+    // Send RERUM error responses to error-messenger.js
+    if (errored) return next(result)
     res.setHeader("Location", result["@id"] ?? result.id)
     res.status(200)
     res.send(result)

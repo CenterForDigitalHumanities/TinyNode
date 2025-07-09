@@ -37,26 +37,31 @@ router.put('/', checkAccessToken, async (req, res, next) => {
     }
 
     const overwriteURL = `${process.env.RERUM_API_ADDR}overwrite`
+    let errored = false
     const response = await fetch(overwriteURL, overwriteOptions)
-    .then(resp=>{
-      if (!resp.ok) throw resp
-      return resp
-    })
-    .catch(async err => {
-      // Handle 409 conflict error for version mismatch
-      if (err.status === 409) {
-        const currentVersion = await err.json()
-        return res.status(409).json(currentVersion)
+    .then(async rerum_res=>{
+      if (rerum_res.ok) return rerum_res.json()
+      errored = true
+      if (rerum_res.headers.get("Content-Type").includes("json")) {
+        // Special handling.  This does not go through to error-messenger.js
+        if (rerum_res.status === 409) {
+          const currentVersion = await rerum_res.json()
+          return res.status(409).json(currentVersion)
+        }
       }
-      throw new Error(`Error in overwrite request: ${err.status} ${err.statusText}`)
+      return rerum_res
     })
-    if(res.headersSent) return
-    const result = await response.json()
+    .catch(err => {
+      throw err
+    })
+    // Send RERUM error responses to error-messenger.js
+    if (errored) return next(response)
+    const result = response
     const location = result?.["@id"] ?? result?.id
     if (location) {
       res.setHeader("Location", location)
     }
-    res.status(response.status ?? 200)
+    res.status(200)
     res.json(result)
   }
   catch (err) {

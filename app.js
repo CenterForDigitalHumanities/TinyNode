@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import createError from "http-errors"
 import express from "express"
 import path from "path"
 import { fileURLToPath } from "url"
@@ -12,12 +11,14 @@ import createRouter from "./routes/create.js"
 import updateRouter from "./routes/update.js"
 import deleteRouter from "./routes/delete.js"
 import overwriteRouter from "./routes/overwrite.js"
+import { messenger } from './error-messenger.js'
 import cors from "cors"
 
 let app = express()
 
 app.use(logger('dev'))
 app.use(express.json())
+app.use(express.text())
 if(process.env.OPEN_API_CORS !== "false") { 
   // This enables CORS for all requests. We may want to update this in the future and only apply to some routes.
   app.use(
@@ -68,20 +69,7 @@ app.use('/app/update', updateRouter)
 app.use('/app/delete', deleteRouter)
 app.use('/app/overwrite', overwriteRouter)
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404))
-})
-
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message
-  res.locals.error = req.app.get('env') === 'development' ? err : {}
-
-  // render the error page
-  res.status(err.status || 500)
-  res.send(err.message)
-})
+// RERUM error response handler, as well as unhandled generic app error handler
+app.use(messenger)
 
 export default app

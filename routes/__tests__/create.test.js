@@ -20,7 +20,9 @@ beforeEach(() => {
    */
   global.fetch = jest.fn(() =>
     Promise.resolve({
-      json: () => Promise.resolve({ "@id": rerum_uri, "test": "item", "__rerum": { "stuff": "here" } })
+      json: () => Promise.resolve({ "@id": rerum_uri, "test": "item", "__rerum": { "stuff": "here" } }),
+      ok: true,
+      text: () => Promise.resolve("Descriptive Error Here")
     })
   )
 })

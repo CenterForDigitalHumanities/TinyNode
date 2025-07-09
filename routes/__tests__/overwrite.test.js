@@ -16,9 +16,9 @@ const rerum_tiny_test_obj_id = `${process.env.RERUM_ID_PATTERN}tiny_tester`
 beforeEach(() => {
   global.fetch = jest.fn(() =>
     Promise.resolve({
-      status: 200,
+      json: () => Promise.resolve({ "@id": rerum_tiny_test_obj_id, "testing": "item", "__rerum": { "stuff": "here" } }),
       ok: true,
-      json: () => Promise.resolve({ "@id": rerum_tiny_test_obj_id, "testing": "item", "__rerum": { "stuff": "here" } })
+      text: () => Promise.resolve("Descriptive Error Here")
     })
   )
 })

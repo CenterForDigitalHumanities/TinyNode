@@ -15,15 +15,17 @@ export async function messenger(rerum_error_res, req, res, next) {
     let error = {}
     let rerum_err_text
     try {
+        // Unless already handled upstream the rerum_error_res is an error Response with details as a textual body.
         rerum_err_text = await rerum_error_res.text()
     }
     catch (err) {
+        // It is some 500
         rerum_err_text = undefined
     }
     if (rerum_err_text) error.message = rerum_err_text
     else { 
-        // Perhaps this is a more generic 500 from the app and there is no good rerum_error_res
-        error.message = rerum_error_res.statusMessage ?? rerum_error_res.message ?? `An unhandled error occured, perhaps with RERUM.` 
+        // Perhaps this is a more generic 500 from the app, perhaps involving RERUM, and there is no good rerum_error_res
+        error.message = rerum_error_res.statusMessage ?? rerum_error_res.message ?? `A server error has occured` 
     }
     error.status = rerum_error_res.statusCode ?? rerum_error_res.status ?? 500
     console.error(error)

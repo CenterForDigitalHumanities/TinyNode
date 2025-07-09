@@ -31,6 +31,7 @@ router.delete('/', checkAccessToken, async (req, res, next) => {
     .catch(err => {
       throw err
     })
+    // Send RERUM error responses to error-messenger.js
     if (errored) return next(results)
     res.status(204)
     res.send(result)

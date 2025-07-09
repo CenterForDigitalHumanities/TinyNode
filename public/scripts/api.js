@@ -126,7 +126,7 @@ function create(form) {
         JSON.parse(obj)
     } catch (error) {
         console.error("You did not provide valid JSON")
-        setMessage("You did not provide valid JSON")
+        _customEvent("rerum-error", "You did not provide valid JSON", {}, error)
         document.getElementById("obj-viewer").style.display = "none"
         return false
     }

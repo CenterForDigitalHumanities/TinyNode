@@ -143,7 +143,7 @@ function create(form) {
     })
     .then(resultObj => {
         delete resultObj.new_obj_state
-        _customEvent("rerum-result", `Created new object at ${resultObj["@id"] ?? MISSING}.  See result below.`, resultObj)
+        _customEvent("rerum-result", `Created new object at ${resultObj["@id"] ?? resultObj.id ?? "MISSING"}.  See result below.`, resultObj)
     })
     .catch(err => {
         _customEvent("rerum-error", "There was an error trying to create object", {}, err)

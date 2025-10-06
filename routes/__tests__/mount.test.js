@@ -117,3 +117,15 @@ describe("Combined unit tests for the '/delete' route.", () => {
     expect(exists).toBe(true)
   })
 })
+
+describe('Check to see that critical repo files are present', () => {
+  it('root folder files', () => {
+    const filePath = './' // Replace with the actual file path
+    expect(fs.existsSync(filePath+"CODEOWNERS")).toBeTruthy()
+    expect(fs.existsSync(filePath+"CONTRIBUTING.md")).toBeTruthy()
+    expect(fs.existsSync(filePath+"README.md")).toBeTruthy()
+    expect(fs.existsSync(filePath+".gitignore")).toBeTruthy()
+    expect(fs.existsSync(filePath+"jest.config.js")).toBeTruthy()
+    expect(fs.existsSync(filePath+"package.json")).toBeTruthy()
+  })
+})

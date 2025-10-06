@@ -7,6 +7,7 @@
 
 import request from "supertest"
 import { jest } from "@jest/globals"
+import fs from "fs"
 import app from "../../app.js"
 
 beforeEach(() => {

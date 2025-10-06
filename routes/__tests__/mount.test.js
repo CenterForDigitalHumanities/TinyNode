@@ -1,3 +1,10 @@
+/**
+ * Express Route Detection
+ * 
+ * This approach checks routes without making HTTP requests by
+ * directly inspecting the Express app's routing table.
+ */
+
 import request from "supertest"
 import { jest } from "@jest/globals"
 import app from "../../app.js"
@@ -17,14 +24,13 @@ afterEach(() => {
 })
 
 /**
- * Helper function to check if a route is registered in Express 5.
- * In Express 5, app._router was replaced with app.router.
+ * Check if a route exists in the Express app
  * Routes are checked by testing the matcher functions on each layer.
  * 
  * @param {Array<string>} routes - Array of route paths to check
  * @returns {boolean} - True if all routes are found
  */
-function checkRoutesExist(routes) {
+function routeExists(routes) {
   const stack = app.router.stack
   const foundRoutes = new Set()
   
@@ -53,7 +59,7 @@ function checkRoutesExist(routes) {
 describe("Check that the expected TinyNode create route patterns are registered.", () => {
   it("'/app/create' and '/create' are registered routes in the app.  __exists __core", () => {
     const routes = ["/create", "/app/create"]
-    const exists = checkRoutesExist(routes)
+    const exists = routeExists(routes)
     expect(exists).toBe(true)
   })
 })
@@ -66,7 +72,7 @@ describe("Check that the expected TinyNode create route patterns are registered.
 describe("Check that the expected TinyNode query route patterns are registered.", () => {
   it("'/app/query' and '/query' are registered routes in the app.  __exists __core", () => {
     const routes = ["/query", "/app/query"]
-    const exists = checkRoutesExist(routes)
+    const exists = routeExists(routes)
     expect(exists).toBe(true)
   })
 })
@@ -79,7 +85,7 @@ describe("Check that the expected TinyNode query route patterns are registered."
 describe("Check that the expected TinyNode update route patterns are registered.", () => {
   it("'/app/update' and '/update' are registered routes in the app.  __exists __core", () => {
     const routes = ["/update", "/app/update"]
-    const exists = checkRoutesExist(routes)
+    const exists = routeExists(routes)
     expect(exists).toBe(true)
   })
 })
@@ -93,7 +99,7 @@ describe("Check that the expected TinyNode update route patterns are registered.
 describe("Check that the expected TinyNode overwrite route patterns are registered.", () => {
   it("'/app/overwrite' and '/overwrite' are registered routes in the app.  __exists __core", () => {
     const routes = ["/overwrite", "/app/overwrite"]
-    const exists = checkRoutesExist(routes)
+    const exists = routeExists(routes)
     expect(exists).toBe(true)
   })
 })
@@ -106,7 +112,7 @@ describe("Check that the expected TinyNode overwrite route patterns are register
 describe("Combined unit tests for the '/delete' route.", () => {
   it("'/app/delete' and '/delete' are registered routes in the app.  __exists __core", () => {
     const routes = ["/delete", "/app/delete"]
-    const exists = checkRoutesExist(routes)
+    const exists = routeExists(routes)
     expect(exists).toBe(true)
   })
 })

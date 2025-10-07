@@ -35,7 +35,6 @@ function routeExists(routes) {
   const stack = app.router.stack
   const foundRoutes = new Set()
   for (const layer of stack) {
-    foundRoutes.add(route)
     if (layer.matchers && layer.matchers[0]) {
       const matcher = layer.matchers[0]
       // Test each route against this layer's matcher

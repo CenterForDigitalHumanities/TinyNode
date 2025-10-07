@@ -34,20 +34,22 @@ afterEach(() => {
 function routeExists(routes) {
   const stack = app.router.stack
   const foundRoutes = new Set()
-  
   for (const layer of stack) {
+    foundRoutes.add(route)
     if (layer.matchers && layer.matchers[0]) {
       const matcher = layer.matchers[0]
       // Test each route against this layer's matcher
       for (const route of routes) {
-        const result = matcher(route)
-        if (result) {
-          foundRoutes.add(route)
-        }
+        if (matcher(route)) foundRoutes.add(route)
+      }
+    }
+    // Also check route.path directly if it exists
+    if (layer.route && layer.route.path) {
+      for (const route of routes) {
+        if (layer.route.path === route) foundRoutes.add(route)
       }
     }
   }
-  
   // Check if all expected routes were found
   return routes.every(route => foundRoutes.has(route))
 }

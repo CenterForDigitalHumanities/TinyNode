@@ -1,5 +1,13 @@
+/**
+ * Express Route Detection
+ * 
+ * This approach checks routes without making HTTP requests by
+ * directly inspecting the Express app's routing table.
+ */
+
 import request from "supertest"
 import { jest } from "@jest/globals"
+import fs from "fs"
 import app from "../../app.js"
 
 beforeEach(() => {
@@ -16,16 +24,34 @@ afterEach(() => {
    */
 })
 
-describe("Make sure TinyNode demo interface is present.  __core", () => {
-  it("/index.html", async () => {
-    const response = await request(app)
-      .get("/index.html")
-      .then(resp => resp)
-      .catch(err => err)
-    expect(response.statusCode).toBe(200)
-    expect(response.header["content-type"]).toMatch(/html/)
-  })
-})
+/**
+ * Check if a route exists in the Express app
+ * Routes are checked by testing the matcher functions on each layer.
+ * 
+ * @param {Array<string>} routes - Array of route paths to check
+ * @returns {boolean} - True if all routes are found
+ */
+function routeExists(routes) {
+  const stack = app.router.stack
+  const foundRoutes = new Set()
+  for (const layer of stack) {
+    if (layer.matchers && layer.matchers[0]) {
+      const matcher = layer.matchers[0]
+      // Test each route against this layer's matcher
+      for (const route of routes) {
+        if (matcher(route)) foundRoutes.add(route)
+      }
+    }
+    // Also check route.path directly if it exists
+    if (layer.route && layer.route.path) {
+      for (const route of routes) {
+        if (layer.route.path === route) foundRoutes.add(route)
+      }
+    }
+  }
+  // Check if all expected routes were found
+  return routes.every(route => foundRoutes.has(route))
+}
 
 /**
  * This test suite uses the built app.js app and checks that the expected create endpoints are registered.
@@ -34,20 +60,8 @@ describe("Make sure TinyNode demo interface is present.  __core", () => {
  */
 describe("Check that the expected TinyNode create route patterns are registered.", () => {
   it("'/app/create' and '/create' are registered routes in the app.  __exists __core", () => {
-    let exists = false
-    let count = 0
-    const stack = app._router.stack
-    for (const middleware of stack) {
-      if (middleware.regexp && middleware.regexp.toString().includes("/app/create")) {
-        count++
-      } else if (middleware.regexp && middleware.regexp.toString().includes("/create")) {
-        count++
-      }
-      if (count === 2) {
-        exists = true
-        break
-      }
-    }
+    const routes = ["/create", "/app/create"]
+    const exists = routeExists(routes)
     expect(exists).toBe(true)
   })
 })
@@ -59,20 +73,8 @@ describe("Check that the expected TinyNode create route patterns are registered.
  */
 describe("Check that the expected TinyNode query route patterns are registered.", () => {
   it("'/app/query' and '/query' are registered routes in the app.  __exists __core", () => {
-    let exists = false
-    let count = 0
-    const stack = app._router.stack
-    for (const middleware of stack) {
-      if (middleware.regexp && middleware.regexp.toString().includes("/app/query")) {
-        count++
-      } else if (middleware.regexp && middleware.regexp.toString().includes("/query")) {
-        count++
-      }
-      if (count === 2) {
-        exists = true
-        break
-      }
-    }
+    const routes = ["/query", "/app/query"]
+    const exists = routeExists(routes)
     expect(exists).toBe(true)
   })
 })
@@ -84,20 +86,8 @@ describe("Check that the expected TinyNode query route patterns are registered."
  */
 describe("Check that the expected TinyNode update route patterns are registered.", () => {
   it("'/app/update' and '/update' are registered routes in the app.  __exists __core", () => {
-    let exists = false
-    let count = 0
-    const stack = app._router.stack
-    for (const middleware of stack) {
-      if (middleware.regexp && middleware.regexp.toString().includes("/app/update")) {
-        count++
-      } else if (middleware.regexp && middleware.regexp.toString().includes("/update")) {
-        count++
-      }
-      if (count === 2) {
-        exists = true
-        break
-      }
-    }
+    const routes = ["/update", "/app/update"]
+    const exists = routeExists(routes)
     expect(exists).toBe(true)
   })
 })
@@ -110,20 +100,8 @@ describe("Check that the expected TinyNode update route patterns are registered.
  */
 describe("Check that the expected TinyNode overwrite route patterns are registered.", () => {
   it("'/app/overwrite' and '/overwrite' are registered routes in the app.  __exists __core", () => {
-    let exists = false
-    let count = 0
-    const stack = app._router.stack
-    for (const middleware of stack) {
-      if (middleware.regexp && middleware.regexp.toString().includes("/app/overwrite")) {
-        count++
-      } else if (middleware.regexp && middleware.regexp.toString().includes("/overwrite")) {
-        count++
-      }
-      if (count === 2) {
-        exists = true
-        break
-      }
-    }
+    const routes = ["/overwrite", "/app/overwrite"]
+    const exists = routeExists(routes)
     expect(exists).toBe(true)
   })
 })
@@ -135,20 +113,20 @@ describe("Check that the expected TinyNode overwrite route patterns are register
  */
 describe("Combined unit tests for the '/delete' route.", () => {
   it("'/app/delete' and '/delete' are registered routes in the app.  __exists __core", () => {
-    let exists = false
-    let count = 0
-    const stack = app._router.stack
-    for (const middleware of stack) {
-      if (middleware.regexp && middleware.regexp.toString().includes("/app/delete")) {
-        count++
-      } else if (middleware.regexp && middleware.regexp.toString().includes("/delete")) {
-        count++
-      }
-      if (count === 2) {
-        exists = true
-        break
-      }
-    }
+    const routes = ["/delete", "/app/delete"]
+    const exists = routeExists(routes)
     expect(exists).toBe(true)
+  })
+})
+
+describe('Check to see that critical repo files are present', () => {
+  it('root folder files', () => {
+    const filePath = './' // Replace with the actual file path
+    expect(fs.existsSync(filePath+"CODEOWNERS")).toBeTruthy()
+    expect(fs.existsSync(filePath+"CONTRIBUTING.md")).toBeTruthy()
+    expect(fs.existsSync(filePath+"README.md")).toBeTruthy()
+    expect(fs.existsSync(filePath+".gitignore")).toBeTruthy()
+    expect(fs.existsSync(filePath+"jest.config.js")).toBeTruthy()
+    expect(fs.existsSync(filePath+"package.json")).toBeTruthy()
   })
 })

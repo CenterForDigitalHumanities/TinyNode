@@ -34,7 +34,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@master
         with:
-          node-version: "22"
+          node-version: "24"
       - name: Cache node modules
         uses: actions/cache@master
         env:
@@ -59,7 +59,7 @@ jobs:
     strategy:
       matrix:
         node-version:
-          - 22
+          - 24
         machines:
           - vlcdhp02
     runs-on: ${{ matrix.machines }}

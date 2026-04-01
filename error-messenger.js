@@ -12,22 +12,37 @@ export async function messenger(rerum_error_res, req, res, next) {
     if (res.headersSent) {
         return
     }
-    let error = {}
-    let rerum_err_text
+
+    const error = {
+        message: rerum_error_res.statusMessage ?? rerum_error_res.message ?? "A server error has occured",
+        status: rerum_error_res.statusCode ?? rerum_error_res.status ?? 500,
+        body: rerum_error_res.body
+    }
+
+    if (error.body !== undefined) {
+        console.error(error)
+        res.status(error.status).json(error.body)
+        return
+    }
+
     try {
-        // Unless already handled upstream the rerum_error_res is an error Response with details as a textual body.
-        rerum_err_text = await rerum_error_res.text()
+        const contentType = rerum_error_res.headers?.get?.("Content-Type")?.toLowerCase?.() ?? ""
+        if (contentType.includes("json")) {
+            error.body = await rerum_error_res.json()
+            console.error(error)
+            res.status(error.status).json(error.body)
+            return
+        }
+
+        const rerumErrText = await rerum_error_res.text()
+        if (rerumErrText) {
+            error.message = rerumErrText
+        }
     }
     catch (err) {
-        // It is some 500
-        rerum_err_text = undefined
+        // Fall back to the status/message values already collected above.
     }
-    if (rerum_err_text) error.message = rerum_err_text
-    else { 
-        // Perhaps this is a more generic 500 from the app, perhaps involving RERUM, and there is no good rerum_error_res
-        error.message = rerum_error_res.statusMessage ?? rerum_error_res.message ?? `A server error has occured` 
-    }
-    error.status = rerum_error_res.statusCode ?? rerum_error_res.status ?? 500
+
     console.error(error)
     res.set("Content-Type", "text/plain; charset=utf-8")
     res.status(error.status).send(error.message)

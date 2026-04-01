@@ -1,9 +1,10 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
+import { httpError, verifyJsonContentType } from "../rest.js"
 const router = express.Router()
 
 /* PUT an overwrite to the thing. */
-router.put('/', checkAccessToken, async (req, res, next) => {
+router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
 
   try {
     
@@ -42,7 +43,8 @@ router.put('/', checkAccessToken, async (req, res, next) => {
     .then(async rerum_res=>{
       if (rerum_res.ok) return rerum_res.json()
       errored = true
-      if (rerum_res.headers.get("Content-Type").includes("json")) {
+      const contentType = rerum_res.headers.get("Content-Type")?.toLowerCase() ?? ""
+      if (contentType.includes("json")) {
         // Special handling.  This does not go through to error-messenger.js
         if (rerum_res.status === 409) {
           const currentVersion = await rerum_res.json()
@@ -52,7 +54,7 @@ router.put('/', checkAccessToken, async (req, res, next) => {
       return rerum_res
     })
     .catch(err => {
-      throw err
+      throw httpError(err.message || "TinyNode could not communicate with RERUM.", 502)
     })
     // Send RERUM error responses to error-messenger.js
     if (errored) return next(response)

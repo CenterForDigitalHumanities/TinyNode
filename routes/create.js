@@ -1,9 +1,10 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
+import { httpError, verifyJsonContentType } from "../rest.js"
 const router = express.Router()
 
 /* POST a create to the thing. */
-router.post('/', checkAccessToken, async (req, res, next) => {
+router.post('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
 
   try {
     // check body for JSON
@@ -25,7 +26,7 @@ router.post('/', checkAccessToken, async (req, res, next) => {
       return res
     })
     .catch(err => {
-      throw err
+      throw httpError(err.message || "TinyNode could not communicate with RERUM.", 502)
     })
     // Send RERUM error responses to error-messenger.js
     if (errored) return next(result)

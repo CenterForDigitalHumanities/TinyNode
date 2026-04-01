@@ -1,9 +1,10 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
+import { httpError, verifyJsonContentType } from "../rest.js"
 const router = express.Router()
 
 /* PUT an update to the thing. */
-router.put('/', checkAccessToken, async (req, res, next) => {
+router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
 
   try {
     // check for @id in body.  Any value is valid.  Lack of value is a bad request.
@@ -30,13 +31,13 @@ router.put('/', checkAccessToken, async (req, res, next) => {
       return res
     })
     .catch(err => {
-      throw err
+      throw httpError(err.message || "TinyNode could not communicate with RERUM.", 502)
     })
     // Send RERUM error responses to error-messenger.js
     if (errored) return next(result)
     res.setHeader("Location", result["@id"] ?? result.id)
     res.status(200)
-    res.send(result)
+    res.json(result)
   }
   catch (err) {
     next(err)

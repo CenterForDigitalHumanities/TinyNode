@@ -1,11 +1,12 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
+import { httpError, verifyJsonContentType } from "../rest.js"
 const router = express.Router()
 
 /* Legacy delete pattern w/body */
 
 /* DELETE a delete to the thing. */
-router.delete('/', checkAccessToken, async (req, res, next) => {
+router.delete('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
   try {
     // check for @id in body.  Any value is valid.  Lack of value is a bad request.
     if (!req?.body || !(req.body['@id'] ?? req.body.id)) {
@@ -24,15 +25,18 @@ router.delete('/', checkAccessToken, async (req, res, next) => {
     }
     const deleteURL = `${process.env.RERUM_API_ADDR}delete`
     let errored = false
-    const result = await fetch(deleteURL, deleteOptions).then(res=>{
-      if (!res.ok) errored = true
+    const result = await fetch(deleteURL, deleteOptions).then(async res=>{
+      if (!res.ok) {
+        errored = true
+        return res
+      }
       return res.text()
     })
     .catch(err => {
-      throw err
+      throw httpError(err.message || "TinyNode could not communicate with RERUM.", 502)
     })
     // Send RERUM error responses to error-messenger.js
-    if (errored) return next(results)
+    if (errored) return next(result)
     res.status(204)
     res.send(result)
   }
@@ -55,14 +59,14 @@ router.delete('/:id', async (req, res, next) => {
     }
     let errored = false
     const result = await fetch(deleteURL, deleteOptions).then(res => {
-      if(!res.ok) errored = true
+      if (!res.ok) errored = true
       return res
     })
     .catch(err => {
-      throw err
+      throw httpError(err.message || "TinyNode could not communicate with RERUM.", 502)
     })
     // Send RERUM error responses to error-messenger.js
-    if (errored) return next(results)
+    if (errored) return next(result)
     res.status(204)
     res.send(result)
   }

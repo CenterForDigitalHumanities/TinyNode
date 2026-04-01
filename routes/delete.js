@@ -1,11 +1,12 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
+import { verifyJsonContentType } from "../rest.js"
 const router = express.Router()
 
 /* Legacy delete pattern w/body */
 
 /* DELETE a delete to the thing. */
-router.delete('/', checkAccessToken, async (req, res, next) => {
+router.delete('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
   try {
     // check for @id in body.  Any value is valid.  Lack of value is a bad request.
     if (!req?.body || !(req.body['@id'] ?? req.body.id)) {

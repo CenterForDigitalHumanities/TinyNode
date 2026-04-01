@@ -34,9 +34,12 @@ router.put('/', checkAccessToken, async (req, res, next) => {
     })
     // Send RERUM error responses to error-messenger.js
     if (errored) return next(result)
-    res.setHeader("Location", result["@id"] ?? result.id)
-    res.status(200)
-    res.send(result)
+    const location = result?.["@id"] ?? result?.id
+    const responseBody = { ...req.body, ...(result ?? {}) }
+    if (location) {
+      res.setHeader("Location", location)
+    }
+    res.status(200).json(responseBody)
   }
   catch (err) {
     next(err)

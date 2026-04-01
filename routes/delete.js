@@ -32,9 +32,8 @@ router.delete('/', checkAccessToken, async (req, res, next) => {
       throw err
     })
     // Send RERUM error responses to error-messenger.js
-    if (errored) return next(results)
-    res.status(204)
-    res.send(result)
+    if (errored) return next(result)
+    res.sendStatus(204)
   }
   catch (err) {
     next(err)
@@ -62,9 +61,8 @@ router.delete('/:id', async (req, res, next) => {
       throw err
     })
     // Send RERUM error responses to error-messenger.js
-    if (errored) return next(results)
-    res.status(204)
-    res.send(result)
+    if (errored) return next(result)
+    res.sendStatus(204)
   }
   catch (err) {
     next(err)

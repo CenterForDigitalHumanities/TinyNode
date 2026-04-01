@@ -1,5 +1,5 @@
 import dotenv from "dotenv"
-const storedEnv = dotenv.config()
+dotenv.config()
 import fs from "node:fs/promises"
 import { parse, stringify } from "envfile"
 

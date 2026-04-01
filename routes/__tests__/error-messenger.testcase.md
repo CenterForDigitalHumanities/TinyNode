@@ -16,9 +16,9 @@ Target: shared middleware in `error-messenger.js`
 - Setup: middleware invoked after headers were sent
 - Expected: middleware exits without secondary write attempts
 
-3. JSON parse failure fallback
-- Setup: response advertises JSON but `.json()` throws
-- Expected: middleware falls back to text path and still returns coherent status/message
+3. `.text()` failure fallback
+- Setup: upstream response `.text()` rejects (e.g., body stream already consumed)
+- Expected: middleware uses generic fallback message with status preserved
 
 4. Empty upstream body behavior
 - Setup: upstream error response has status but empty body

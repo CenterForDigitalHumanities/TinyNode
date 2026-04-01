@@ -10,7 +10,7 @@ Target: `POST /create` and `POST /app/create`
 
 1. Upstream JSON error passthrough
 - Setup: upstream returns non-2xx with `Content-Type: application/json` body
-- Expected: TinyNode returns same status and JSON payload through shared messenger
+- Expected: TinyNode returns same status; body forwarded as plain text through shared messenger
 
 2. Missing `Content-Type` header on request
 - Setup: client sends valid JSON body but omits `Content-Type`

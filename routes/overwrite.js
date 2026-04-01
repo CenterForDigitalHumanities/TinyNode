@@ -26,13 +26,13 @@ router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) 
     }
 
     // Pass through If-Overwritten-Version header if present
-    const ifOverwrittenVersion = req.headers.hasOwnProperty('if-overwritten-version') ? req.headers['if-overwritten-version'] : null
+    const ifOverwrittenVersion = Object.hasOwn(req.headers, 'if-overwritten-version') ? req.headers['if-overwritten-version'] : null
     if (ifOverwrittenVersion !== null) {
       overwriteOptions.headers['If-Overwritten-Version'] = ifOverwrittenVersion
     }
 
     // Check for __rerum.isOverwritten in body and use as If-Overwritten-Version header
-    const isOverwrittenValue = req.body?.__rerum?.hasOwnProperty("isOverwritten") ? req.body.__rerum.isOverwritten : null
+    const isOverwrittenValue = Object.hasOwn(req.body?.__rerum ?? {}, "isOverwritten") ? req.body.__rerum.isOverwritten : null
     if (isOverwrittenValue !== null) {
       overwriteOptions.headers['If-Overwritten-Version'] = isOverwrittenValue
     }
@@ -60,11 +60,11 @@ router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) 
     if (errored) return next(response)
     const result = response
     const location = result?.["@id"] ?? result?.id
+    const responseBody = { ...req.body, ...(result ?? {}) }
     if (location) {
       res.setHeader("Location", location)
     }
-    res.status(200)
-    res.json(result)
+    res.status(200).json(responseBody)
   }
   catch (err) {
     next(err)

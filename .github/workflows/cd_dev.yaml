@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+      - name: Fetch all branches
+        run: git fetch --all
       - name: Merge with main
         uses: devmasx/merge-branch@master
         with:

@@ -37,8 +37,7 @@ router.delete('/', verifyJsonContentType, checkAccessToken, async (req, res, nex
     })
     // Send RERUM error responses to error-messenger.js
     if (errored) return next(result)
-    res.status(204)
-    res.send(result)
+    res.sendStatus(204)
   }
   catch (err) {
     next(err)
@@ -67,8 +66,7 @@ router.delete('/:id', async (req, res, next) => {
     })
     // Send RERUM error responses to error-messenger.js
     if (errored) return next(result)
-    res.status(204)
-    res.send(result)
+    res.sendStatus(204)
   }
   catch (err) {
     next(err)

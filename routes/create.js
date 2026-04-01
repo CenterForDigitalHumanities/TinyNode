@@ -30,9 +30,12 @@ router.post('/', verifyJsonContentType, checkAccessToken, async (req, res, next)
     })
     // Send RERUM error responses to error-messenger.js
     if (errored) return next(result)
-    res.setHeader("Location", result["@id"] ?? result.id)
-    res.status(201)
-    res.json(result)
+    const location = result?.["@id"] ?? result?.id
+    const responseBody = { ...req.body, ...(result ?? {}) }
+    if (location) {
+      res.setHeader("Location", location)
+    }
+    res.status(201).json(responseBody)
   }
   catch (err) {
     next(err)

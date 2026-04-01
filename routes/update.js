@@ -1,9 +1,10 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
+import { verifyJsonContentType } from "../rest.js"
 const router = express.Router()
 
 /* PUT an update to the thing. */
-router.put('/', checkAccessToken, async (req, res, next) => {
+router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
 
   try {
     // check for @id in body.  Any value is valid.  Lack of value is a bad request.

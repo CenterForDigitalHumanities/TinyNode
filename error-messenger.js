@@ -25,7 +25,7 @@ export async function messenger(rerum_error_res, req, res, next) {
         if (rerum_err_text) error.message = rerum_err_text
         else { 
                 // Perhaps this is a more generic 500 from the app, perhaps involving RERUM, and there is no good rerum_error_res
-                error.message = rerum_error_res.statusMessage ?? rerum_error_res.message ?? `A server error has occured` 
+                error.message = rerum_error_res.statusMessage ?? rerum_error_res.message ?? `A server error has occurred` 
         }
         error.status = rerum_error_res.statusCode ?? rerum_error_res.status ?? 500
         console.error(error)

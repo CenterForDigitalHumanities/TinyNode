@@ -3,11 +3,11 @@ const acceptedJsonContentTypes = new Set([
   "application/ld+json"
 ])
 
-export function httpError(message, status = 500, body) {
+export function httpError(message, status = 500, payload) {
   const error = new Error(message)
   error.status = status
   if (body !== undefined) {
-    error.payload = body
+    error.payload = payload
   }
   return error
 }

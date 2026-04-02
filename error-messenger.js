@@ -1,6 +1,7 @@
 /**
  * Errors from RERUM are a response code with a text body (except those handled specifically upstream)
  * We want to send the same error code and message through.  It is assumed to be RESTful and useful.
+ * This is a fallback for unhandled errors from RERUM, and should not be used for expected errors that are handled upstream (e.g. 409 conflict for version mismatch on overwrite).  It will also handle network errors that occur when trying to reach RERUM, which will be mapped to a 502 Bad Gateway with a message indicating a RERUM network error.
  * This will also handle generic (500) app level errors, as well as app level 404 errors.
  *
  * @param rerum_error_res A Fetch API Response object from a fetch() to RERUM that encountered an error.  Explanatory text is in .text().  In some cases it is a unhandled generic (500) app level Error.
@@ -13,10 +14,18 @@ export async function messenger(rerum_error_res, req, res, next) {
         return
     }
 
+    const hasReadableStream = typeof globalThis.ReadableStream === "function"
+    const explicitBody = rerum_error_res.errorBody ?? (
+        rerum_error_res.body !== undefined
+        && (!hasReadableStream || !(rerum_error_res.body instanceof globalThis.ReadableStream))
+            ? rerum_error_res.body
+            : undefined
+    )
+
     const error = {
-        message: rerum_error_res.statusMessage ?? rerum_error_res.message ?? "A server error has occured",
+        message: rerum_error_res.statusMessage ?? rerum_error_res.message ?? "A server error has occurred",
         status: rerum_error_res.statusCode ?? rerum_error_res.status ?? 500,
-        body: rerum_error_res.body
+        body: explicitBody
     }
 
     if (error.body !== undefined) {

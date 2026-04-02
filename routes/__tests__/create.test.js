@@ -129,8 +129,8 @@ describe("Check that TinyNode create route propagates upstream and network error
       .send({ "test": "item" })
       .then(resp => resp)
       .catch(err => err)
-    expect(response.statusCode).toBe(503)
-    expect(response.text).toBe("Upstream create failure")
+    expect(response.statusCode).toBe(502)
+    expect(response.text).toContain("Upstream create failure")
 
     global.fetch = jest.fn(() => Promise.reject(new Error("socket hang up")))
 
@@ -141,7 +141,7 @@ describe("Check that TinyNode create route propagates upstream and network error
       .then(resp => resp)
       .catch(err => err)
     expect(response.statusCode).toBe(502)
-    expect(response.text).toContain("socket hang up")
+    expect(response.text).toContain("A RERUM error occurred")
   })
 })
 

@@ -2,6 +2,7 @@ import express from "express"
 import request from "supertest"
 import { jest } from "@jest/globals"
 import queryRoute from "../query.js"
+import { messenger } from "../../error-messenger.js"
 //import app from "../../app.js"
 
 const routeTester = new express()
@@ -9,6 +10,7 @@ routeTester.use(express.json())
 routeTester.use(express.urlencoded({ extended: false }))
 routeTester.use("/query", queryRoute)
 routeTester.use("/app/query", queryRoute)
+routeTester.use(messenger)
 
 const rerum_uri = `${process.env.RERUM_ID_PATTERN}_not_`
 

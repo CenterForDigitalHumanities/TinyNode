@@ -22,7 +22,7 @@ router.post('/', verifyJsonContentType, async (req, res, next) => {
     if (Number.isNaN(Number.parseInt(lim, 10) + Number.parseInt(skip, 10))
       || (lim < 0)
       || (skip < 0)) {
-      const err = new Error("`limit` and `skip` values must be positive integers or omitted.")
+      const err = new Error("`limit` and `skip` values must be non-negative integers or omitted.")
       err.status = 400
       throw err
     }

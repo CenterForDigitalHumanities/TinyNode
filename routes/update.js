@@ -1,6 +1,6 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
-import { verifyJsonContentType } from "../rest.js"
+import { httpError, verifyJsonContentType } from "../rest.js"
 import { createRerumNetworkError, fetchRerum } from "../rerum.js"
 const router = express.Router()
 
@@ -10,9 +10,7 @@ router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) 
   try {
     // check for @id; any value is valid
     if (!req.body || !(req.body['@id'] ?? req.body.id)) {
-      const err = new Error("No record id to update! (https://store.rerum.io/API.html#update)")
-      err.status = 400
-      throw err
+      throw httpError("No record id to update! (https://store.rerum.io/API.html#update)", 400)
     }
 
     const updateBody = JSON.stringify(req.body)
@@ -37,9 +35,7 @@ router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) 
       } catch (e) {
         rerumErrorMessage = `500: ${updateURL} - A RERUM error occurred`
       }
-      const err = new Error(rerumErrorMessage)
-      err.status = 502
-      throw err
+      throw httpError(rerumErrorMessage, 502)
     })
     if (!(rerumResponse.id || rerumResponse["@id"])) {
       // A 200 with garbled data, call it a fail

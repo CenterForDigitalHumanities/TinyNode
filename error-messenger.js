@@ -14,23 +14,14 @@ export async function messenger(rerum_error_res, req, res, next) {
         return
     }
 
-    const hasReadableStream = typeof globalThis.ReadableStream === "function"
-    const explicitBody = rerum_error_res.errorBody ?? (
-        rerum_error_res.body !== undefined
-        && (!hasReadableStream || !(rerum_error_res.body instanceof globalThis.ReadableStream))
-            ? rerum_error_res.body
-            : undefined
-    )
-
     const error = {
         message: rerum_error_res.statusMessage ?? rerum_error_res.message ?? "A server error has occurred",
         status: rerum_error_res.statusCode ?? rerum_error_res.status ?? 500,
-        body: explicitBody
     }
 
-    if (error.body !== undefined) {
+    if (rerum_error_res.payload !== undefined) {
         console.error(error)
-        res.status(error.status).json(error.body)
+        res.status(error.status).json(rerum_error_res.payload)
         return
     }
 

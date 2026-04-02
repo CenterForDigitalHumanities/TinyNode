@@ -1,5 +1,5 @@
 import express from "express"
-import { verifyJsonContentType } from "../rest.js"
+import { httpError, verifyJsonContentType } from "../rest.js"
 import { fetchRerum } from "../rerum.js"
 const router = express.Router()
 
@@ -14,17 +14,13 @@ router.post('/', verifyJsonContentType, async (req, res, next) => {
     // If there is an empty query with [] or {}, we consider that a query for all data,
     // which we don't want to allow. We will throw a 400 error.
     if (queryBody === '{}' || queryBody === '[]') {
-      const err = new Error("Empty query is not allowed. Please provide a valid query in the request body.")
-      err.status = 400
-      throw err
+      throw httpError("Empty query is not allowed. Please provide a valid query in the request body.", 400)
     }
     // check limit and skip for INT
     if (Number.isNaN(Number.parseInt(lim, 10) + Number.parseInt(skip, 10))
       || (lim < 0)
       || (skip < 0)) {
-      const err = new Error("`limit` and `skip` values must be non-negative integers or omitted.")
-      err.status = 400
-      throw err
+      throw httpError("`limit` and `skip` values must be non-negative integers or omitted.", 400)
     }
 
     const queryOptions = {
@@ -48,9 +44,7 @@ router.post('/', verifyJsonContentType, async (req, res, next) => {
       } catch (e) {
         rerumErrorMessage = `500: ${queryURL} - A RERUM error occurred`
       }
-      const err = new Error(rerumErrorMessage)
-      err.status = 502
-      throw err
+      throw httpError(rerumErrorMessage, 502)
     })
     res.status(200).json(rerumResponse)
   }

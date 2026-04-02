@@ -1,6 +1,6 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
-import { verifyJsonContentType } from "../rest.js"
+import { httpError, verifyJsonContentType } from "../rest.js"
 import { createRerumNetworkError, fetchRerum } from "../rerum.js"
 const router = express.Router()
 
@@ -12,9 +12,7 @@ router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) 
     const overwriteBody = req.body
     // check for @id; any value is valid
     if (!overwriteBody || !(overwriteBody['@id'] ?? overwriteBody.id)) {
-      const err = new Error("No record id to overwrite! (https://store.rerum.io/API.html#overwrite)")
-      err.status = 400
-      throw err
+      throw httpError("No record id to overwrite! (https://store.rerum.io/API.html#overwrite)", 400)
     }
 
     const overwriteOptions = {

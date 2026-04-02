@@ -7,8 +7,7 @@ export function httpError(message, status = 500, body) {
   const error = new Error(message)
   error.status = status
   if (body !== undefined) {
-    error.errorBody = body
-    error.body = body
+    error.payload = body
   }
   return error
 }

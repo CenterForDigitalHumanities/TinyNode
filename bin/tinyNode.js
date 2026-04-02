@@ -5,9 +5,7 @@
  */
 
 import dotenv from "dotenv"
-import dotenvExpand from "dotenv-expand"
-const storedEnv = dotenv.config()
-dotenvExpand.expand(storedEnv)
+dotenv.config()
 import app from "../app.js"
 import debug from 'debug'
 debug('tinynode:server')

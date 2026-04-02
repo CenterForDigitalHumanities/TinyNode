@@ -1,6 +1,7 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
-import { httpError, verifyJsonContentType } from "../rest.js"
+import { verifyJsonContentType } from "../rest.js"
+import { createRerumNetworkError, fetchRerum } from "../rerum.js"
 const router = express.Router()
 
 /* PUT an overwrite to the thing. */
@@ -20,54 +21,60 @@ router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) 
       body: JSON.stringify(overwriteBody),
       headers: {
         'user-agent': 'Tiny-Things/1.0',
+        'Origin': process.env.ORIGIN,
         'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
         'Content-Type' : "application/json;charset=utf-8"
       }
     }
 
     // Pass through If-Overwritten-Version header if present
-    const ifOverwrittenVersion = Object.hasOwn(req.headers, 'if-overwritten-version') ? req.headers['if-overwritten-version'] : null
-    if (ifOverwrittenVersion !== null) {
+    const ifOverwrittenVersion = req.headers['if-overwritten-version']
+    if (ifOverwrittenVersion) {
       overwriteOptions.headers['If-Overwritten-Version'] = ifOverwrittenVersion
     }
 
     // Check for __rerum.isOverwritten in body and use as If-Overwritten-Version header
-    const isOverwrittenValue = Object.hasOwn(req.body?.__rerum ?? {}, "isOverwritten") ? req.body.__rerum.isOverwritten : null
-    if (isOverwrittenValue !== null) {
+    const isOverwrittenValue = req.body?.__rerum?.isOverwritten
+    if (isOverwrittenValue) {
       overwriteOptions.headers['If-Overwritten-Version'] = isOverwrittenValue
     }
 
     const overwriteURL = `${process.env.RERUM_API_ADDR}overwrite`
-    let errored = false
-    const response = await fetch(overwriteURL, overwriteOptions)
-    .then(async rerum_res=>{
-      if (rerum_res.ok) return rerum_res.json()
-      errored = true
-      const contentType = rerum_res.headers.get("Content-Type")?.toLowerCase() ?? ""
-      if (contentType.includes("json")) {
-        // Special handling.  This does not go through to error-messenger.js
-        if (rerum_res.status === 409) {
-          const currentVersion = await rerum_res.json()
-          return res.status(409).json(currentVersion)
-        }
+    const rerumResponse = await fetchRerum(overwriteURL, overwriteOptions)
+    .then(async (resp) => {
+      if (resp.ok) return resp.json()
+      // Handle 409 conflict error for version mismatch (optimistic locking)
+      if (resp.status === 409) {
+        const conflictBody = await resp.json()
+        const err = new Error("Version conflict")
+        err.status = 409
+        err.body = conflictBody
+        throw err
       }
-      return rerum_res
+      // The response from RERUM indicates a failure, likely with a specific code and textual body
+      let rerumErrorMessage
+      try {
+        rerumErrorMessage = `${resp.status ?? 500}: ${overwriteURL} - ${await resp.text()}`
+      } catch (e) {
+        rerumErrorMessage = `500: ${overwriteURL} - A RERUM error occurred`
+      }
+      const err = new Error(rerumErrorMessage)
+      err.status = 502
+      throw err
     })
-    .catch(err => {
-      throw httpError(err.message || "TinyNode could not communicate with RERUM.", 502)
-    })
-    // Send RERUM error responses to error-messenger.js
-    if (errored) return next(response)
-    const result = response
-    const location = result?.["@id"] ?? result?.id
-    const responseBody = { ...req.body, ...(result ?? {}) }
-    if (location) {
-      res.setHeader("Location", location)
+    if (!(rerumResponse.id || rerumResponse["@id"])) {
+      // A 200 with garbled data, call it a fail
+      throw createRerumNetworkError(overwriteURL)
     }
-    res.status(200).json(responseBody)
+    res.setHeader("Location", rerumResponse["@id"] ?? rerumResponse.id)
+    res.status(200).json(rerumResponse)
   }
   catch (err) {
-    next(err)
+    console.error(err)
+    if (err.status === 409) {
+      return res.status(409).json(err.body)
+    }
+    res.status(err.status ?? 500).type('text/plain').send(err.message ?? 'An error occurred')
   }
 })
 

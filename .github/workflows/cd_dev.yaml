@@ -52,7 +52,7 @@ jobs:
       - name: Install dependencies and run the test
         run: |
           npm install
-          npm run functionalTests
+          npm run allTests
   deploy:
     if: github.event.pull_request.draft == false
     needs:

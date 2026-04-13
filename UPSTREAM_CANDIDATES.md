@@ -15,7 +15,7 @@ This document tracks candidate updates identified from TinyPen that may be upstr
 | C-001 | Content-Type validation middleware for JSON endpoints | upstream-now | PR #39 | `routes/query.js`, `routes/create.js`, `routes/update.js`, `routes/delete.js`, `routes/overwrite.js` | Detect malformed or unsupported media types and return 415. |
 | C-002 | Query body validation for empty object/array | upstream-now | PR #33 | `routes/query.js`, `routes/__tests__/query.test.js` | Reject empty query payloads with 400. |
 | C-003 | Query pagination validation for `limit` and `skip` | upstream-now | PR #33 | `routes/query.js`, `routes/__tests__/query.test.js` | Require non-negative integers when provided. |
-| C-004 | Route-level error semantic consistency | investigate-first | PR #39 and related | `routes/*.js`, `error-messenger.js` | Normalize error objects/status handling before broad refactor. |
+| C-004 | Route-level error semantic consistency | upstream-now | PR #39 and related | `routes/*.js`, `error-messenger.js` | Partial implementation landed: explicit 502 network failures, structured JSON passthrough, and fixed upstream propagation defects. Remaining route-specific parity can follow later. |
 | C-005 | Dependency cleanup after Node upgrade | investigate-first | TinyPen dependency diffs | `package.json` | Verify runtime paths before removing deps (`morgan`, `dotenv-expand`, `jsonld`). |
 | C-006 | Optimistic locking parity improvements | investigate-first | PR #20 | `routes/overwrite.js`, `routes/__tests__/overwrite.test.js` | Keep current behavior, evaluate if more parity is needed. |
 | C-007 | Temporary test alignment imports from TinyPen | upstream-now | PR #35 context | `routes/__tests__/*` | Include useful generated coverage temporarily while test strategy evolves. |
@@ -42,3 +42,13 @@ This document tracks candidate updates identified from TinyPen that may be upstr
 3. Full test suite passes before merge.
 4. Dependency changes include runtime verification notes.
 5. Uncertain candidates remain blocked until evidence is upgraded from investigate-first to upstream-now.
+
+## Deferred Test Cases
+
+These scenarios are worth adding as follow-up coverage, but do not block the current implementation slice.
+
+1. `create`, `update`, `delete`, and `overwrite` should each preserve upstream text error bodies and status codes.
+2. `update`, `delete`, and `overwrite` should each map network failures to `502 Bad Gateway`.
+3. `overwrite` should preserve its special `409` JSON conflict response when `If-Overwritten-Version` negotiation fails.
+4. `delete/:id` should verify upstream non-2xx responses are propagated through the shared messenger instead of failing locally.
+5. Shared error handling should verify fallback behavior for generic thrown `Error` objects without upstream response metadata.

@@ -3,6 +3,15 @@ const acceptedJsonContentTypes = new Set([
   "application/ld+json"
 ])
 
+export function httpError(message, status = 500, payload) {
+  const error = new Error(message)
+  error.status = status
+  if (payload !== undefined) {
+    error.payload = payload
+  }
+  return error
+}
+
 function getContentType(req) {
   const rawContentType = req.headers?.["content-type"]
   if (!rawContentType) {

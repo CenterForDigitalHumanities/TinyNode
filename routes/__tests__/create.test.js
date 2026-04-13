@@ -3,6 +3,7 @@ import request from "supertest"
 import { jest } from "@jest/globals"
 
 import createRoute from "../create.js"
+import { messenger } from "../../error-messenger.js"
 //import app from "../../app.js"
 
 const routeTester = new express()
@@ -10,6 +11,7 @@ routeTester.use(express.json())
 routeTester.use(express.urlencoded({ extended: false }))
 routeTester.use("/create", createRoute)
 routeTester.use("/app/create", createRoute)
+routeTester.use(messenger)
 
 const rerum_uri = `${process.env.RERUM_ID_PATTERN}_not_`
 
@@ -105,6 +107,41 @@ describe("Check that incorrect TinyNode create route usage results in expected R
       .catch(err => err)
     expect(response.statusCode).toBe(400)
 
+  })
+})
+
+describe("Check that TinyNode create route propagates upstream and network errors predictably.  __rest __core", () => {
+  it("Preserves upstream text errors and maps network failures to 502.", async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: false,
+        status: 503,
+        headers: {
+          get: () => "text/plain; charset=utf-8"
+        },
+        text: () => Promise.resolve("Upstream create failure")
+      })
+    )
+
+    let response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "application/json")
+      .send({ "test": "item" })
+      .then(resp => resp)
+      .catch(err => err)
+    expect(response.statusCode).toBe(502)
+    expect(response.text).toContain("Upstream create failure")
+
+    global.fetch = jest.fn(() => Promise.reject(new Error("socket hang up")))
+
+    response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "application/json")
+      .send({ "test": "item" })
+      .then(resp => resp)
+      .catch(err => err)
+    expect(response.statusCode).toBe(502)
+    expect(response.text).toContain("A RERUM error occurred")
   })
 })
 

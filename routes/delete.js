@@ -1,72 +1,83 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
 import { verifyJsonContentType } from "../rest.js"
+import { fetchRerum } from "../rerum.js"
 const router = express.Router()
 
-/* Legacy delete pattern w/body */
-
-/* DELETE a delete to the thing. */
+/* Legacy delete pattern w/body. */
 router.delete('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
   try {
-    // check for @id in body.  Any value is valid.  Lack of value is a bad request.
     if (!req?.body || !(req.body['@id'] ?? req.body.id)) {
-      res.status(400).send("No record id to delete! (https://store.rerum.io/v1/API.html#delete)")
-      return
+      const err = new Error("No record id to delete! (https://store.rerum.io/v1/API.html#delete)")
+      err.status = 400
+      throw err
     }
-    const body = JSON.stringify(req.body)
+
+    const deleteBody = JSON.stringify(req.body)
     const deleteOptions = {
-      body,
+      body: deleteBody,
       method: 'DELETE',
       headers: {
         'user-agent': 'Tiny-Things/1.0',
+        'Origin': process.env.ORIGIN,
         'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
         'Content-Type' : "application/json; charset=utf-8"
       }
     }
     const deleteURL = `${process.env.RERUM_API_ADDR}delete`
-    let errored = false
-    const result = await fetch(deleteURL, deleteOptions).then(res=>{
-      if (!res.ok) errored = true
-      return res.text()
-    })
-    .catch(err => {
+    await fetchRerum(deleteURL, deleteOptions)
+    .then(async (resp) => {
+      if (resp.ok) return
+      let rerumErrorMessage
+      try {
+        rerumErrorMessage = `${resp.status ?? 500}: ${deleteURL} - ${await resp.text()}`
+      } catch (e) {
+        rerumErrorMessage = `500: ${deleteURL} - A RERUM error occurred`
+      }
+      const err = new Error(rerumErrorMessage)
+      err.status = 502
       throw err
     })
-    // Send RERUM error responses to error-messenger.js
-    if (errored) return next(result)
-    res.sendStatus(204)
+    res.status(204).end()
   }
   catch (err) {
-    next(err)
+    console.error(err)
+    res.status(err.status ?? 500).type('text/plain').send(err.message ?? 'An error occurred')
   }
 })
 
-/* DELETE a delete to the thing. */
-router.delete('/:id', async (req, res, next) => {
+/* DELETE an object by ID via the RERUM API. */
+router.delete('/:id', checkAccessToken, async (req, res, next) => {
   try {
   
     const deleteURL = `${process.env.RERUM_API_ADDR}delete/${req.params.id}`
     const deleteOptions = {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
         'user-agent': 'Tiny-Things/1.0',
+        'Origin': process.env.ORIGIN,
         'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
       }
     }
-    let errored = false
-    const result = await fetch(deleteURL, deleteOptions).then(res => {
-      if(!res.ok) errored = true
-      return res
-    })
-    .catch(err => {
+    await fetchRerum(deleteURL, deleteOptions)
+    .then(async (resp) => {
+      if (resp.ok) return
+      // The response from RERUM indicates a failure, likely with a specific code and textual body
+      let rerumErrorMessage
+      try {
+        rerumErrorMessage = `${resp.status ?? 500}: ${deleteURL} - ${await resp.text()}`
+      } catch (e) {
+        rerumErrorMessage = `500: ${deleteURL} - A RERUM error occurred`
+      }
+      const err = new Error(rerumErrorMessage)
+      err.status = 502
       throw err
     })
-    // Send RERUM error responses to error-messenger.js
-    if (errored) return next(result)
-    res.sendStatus(204)
+    res.status(204).end()
   }
   catch (err) {
-    next(err)
+    console.error(err)
+    res.status(err.status ?? 500).type('text/plain').send(err.message ?? 'An error occurred')
   }
 })
 

@@ -26,7 +26,7 @@
     "existsTests": "node --test --test-name-pattern=__exists test/routes/**/*.test.js",
     "coreTests": "node --test --test-name-pattern=__core test/routes/**/*.test.js",
     "functionalTests": "node --test --test-name-pattern=__mock_functions test/routes/**/*.test.js",
-    "coverage": "c8 --reporter=text --reporter=json --reporter=html node --test test/routes/**/*.test.js",
+    "coverage": "c8 --check-coverage --lines 75 --functions 80 --branches 60 --statements 75 --reporter=text --reporter=json --reporter=html node --test test/routes/**/*.test.js",
     "e2e:install": "playwright install --with-deps chromium",
     "ci:fast": "npm run coreTests && npm run existsTests && npm run functionalTests",
     "ci:full": "npm run e2e:install && npm run allTests && npm run coverage"

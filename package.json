@@ -29,7 +29,7 @@
     "coverage": "c8 --check-coverage --lines 75 --functions 80 --branches 60 --statements 75 --reporter=text --reporter=json --reporter=html node --test test/routes/**/*.test.js",
     "e2e:install": "playwright install --with-deps chromium",
     "ci:fast": "npm run coreTests && npm run existsTests && npm run functionalTests",
-    "ci:full": "npm run e2e:install && npm run allTests && npm run coverage"
+    "ci:full": "npm run e2e:install && npm run E2Etests && npm run coverage"
   },
   "dependencies": {
     "cors": "^2.8.5",

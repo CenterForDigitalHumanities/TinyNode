@@ -1,20 +1,26 @@
 import express from "express"
+import { verifyJsonContentType } from "../rest.js"
 const router = express.Router()
 
 /* POST a query to the thing. */
-router.post('/', async (req, res, next) => {
-  const lim = req.query.limit ?? 10
-  const skip = req.query.skip ?? 0
+router.post('/', verifyJsonContentType, async (req, res, next) => {
+  const limit = Number.parseInt(req.query.limit ?? 10, 10)
+  const skip = Number.parseInt(req.query.skip ?? 0, 10)
 
   try {
-    // check body for JSON
-    const body = JSON.stringify(req.body)
-    // check limit and skip for INT
-    if (isNaN(parseInt(lim) + parseInt(skip))
-      || (lim < 0)
-      || (skip < 0)) {
-      throw Error("`limit` and `skip` values must be positive integers or omitted.")
+    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+      res.status(400).send("Query payload must be a non-empty JSON object.")
+      return
     }
+    if (Object.keys(req.body).length === 0) {
+      res.status(400).send("Query payload must not be an empty object.")
+      return
+    }
+    if (!Number.isInteger(limit) || !Number.isInteger(skip) || limit < 0 || skip < 0) {
+      res.status(400).send("`limit` and `skip` values must be non-negative integers or omitted.")
+      return
+    }
+    const body = JSON.stringify(req.body)
     const queryOptions = {
       method: 'POST',
       body,
@@ -24,9 +30,18 @@ router.post('/', async (req, res, next) => {
         'Content-Type' : "application/json;charset=utf-8"
       }
     }
-    const queryURL = `${process.env.RERUM_API_ADDR}query?limit=${lim}&skip=${skip}`
-    const results = await fetch(queryURL, queryOptions).then(res=>res.json())
-    .catch(err=>next(err))
+    const queryURL = `${process.env.RERUM_API_ADDR}query?limit=${limit}&skip=${skip}`
+    let errored = false
+    const results = await fetch(queryURL, queryOptions).then(res=>{
+      if (res.ok) return res.json()
+      errored = true
+      return res
+    })
+    .catch(err => {
+      throw err
+    })
+    // Send RERUM error responses to error-messenger.js
+    if (errored) return next(results)
     res.status(200)
     res.send(results)
   }

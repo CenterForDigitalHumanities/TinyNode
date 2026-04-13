@@ -19,7 +19,9 @@ beforeEach(() => {
    */
   global.fetch = jest.fn(() =>
     Promise.resolve({
-      json: () => Promise.resolve([{ "@id": rerum_uri, "test": "item", "__rerum": { "stuff": "here" } }])
+      json: () => Promise.resolve([{ "@id": rerum_uri, "test": "item", "__rerum": { "stuff": "here" } }]),
+      ok: true,
+      text: () => Promise.resolve("Descriptive Error Here")
     })
   )
 })
@@ -92,6 +94,46 @@ describe("Check that incorrect TinyNode query route usage results in expected RE
       .then(resp => resp)
       .catch(err => err)
     expect(response.statusCode).toBe(400)
+
+    response = await request(routeTester)
+      .post("/query")
+      .set("Content-Type", "application/json")
+      .send({})
+      .then(resp => resp)
+      .catch(err => err)
+    expect(response.statusCode).toBe(400)
+
+    response = await request(routeTester)
+      .post("/query")
+      .set("Content-Type", "application/json")
+      .send([])
+      .then(resp => resp)
+      .catch(err => err)
+    expect(response.statusCode).toBe(400)
+
+    response = await request(routeTester)
+      .post("/query?limit=-1")
+      .set("Content-Type", "application/json")
+      .send({ "test": "item" })
+      .then(resp => resp)
+      .catch(err => err)
+    expect(response.statusCode).toBe(400)
+
+    response = await request(routeTester)
+      .post("/query?skip=abc")
+      .set("Content-Type", "application/json")
+      .send({ "test": "item" })
+      .then(resp => resp)
+      .catch(err => err)
+    expect(response.statusCode).toBe(400)
+
+    response = await request(routeTester)
+      .post("/query")
+      .set("Content-Type", "text/plain")
+      .send("plain text")
+      .then(resp => resp)
+      .catch(err => err)
+    expect(response.statusCode).toBe(415)
 
   })
 })

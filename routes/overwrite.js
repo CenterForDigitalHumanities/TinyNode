@@ -1,35 +1,71 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
+import { verifyJsonContentType } from "../rest.js"
 const router = express.Router()
-import rerumPropertiesWasher from "../preprocessor.js"
 
 /* PUT an overwrite to the thing. */
-router.put('/', checkAccessToken, rerumPropertiesWasher, async (req, res, next) => {
+router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
 
   try {
-    // check for @id in body.  Any value is valid.  Lack of value is a bad request.
-    if (!req?.body || !(req.body['@id'] ?? req.body.id)) {
-      res.status(400).send("No record id to overwrite! (https://store.rerum.io/v1/API.html#overwrite)")
+    
+    const overwriteBody = req.body
+    // check for @id; any value is valid
+    if (!(overwriteBody['@id'] ?? overwriteBody.id)) {
+      res.status(400).send("No record id to overwrite! (https://store.rerum.io/API.html#overwrite)")
+      return
     }
-    // check body for JSON
-    const body = JSON.stringify(req.body)
+
     const overwriteOptions = {
       method: 'PUT',
-      body,
+      body: JSON.stringify(overwriteBody),
       headers: {
         'user-agent': 'Tiny-Things/1.0',
         'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
         'Content-Type' : "application/json;charset=utf-8"
       }
     }
+
+    // Pass through If-Overwritten-Version header if present
+    const ifOverwrittenVersion = Object.hasOwn(req.headers, 'if-overwritten-version') ? req.headers['if-overwritten-version'] : null
+    if (ifOverwrittenVersion !== null) {
+      overwriteOptions.headers['If-Overwritten-Version'] = ifOverwrittenVersion
+    }
+
+    // Check for __rerum.isOverwritten in body and use as If-Overwritten-Version header
+    const isOverwrittenValue = Object.hasOwn(req.body?.__rerum ?? {}, "isOverwritten") ? req.body.__rerum.isOverwritten : null
+    if (isOverwrittenValue !== null) {
+      overwriteOptions.headers['If-Overwritten-Version'] = isOverwrittenValue
+    }
+
     const overwriteURL = `${process.env.RERUM_API_ADDR}overwrite`
-    const result = await fetch(overwriteURL, overwriteOptions).then(res=>res.json())
-    .catch(err=>next(err))
-    res.setHeader("Location", result["@id"] ?? result.id)
-    res.status(200)
-    res.send(result)
+    let errored = false
+    const response = await fetch(overwriteURL, overwriteOptions)
+    .then(async rerum_res=>{
+      if (rerum_res.ok) return rerum_res.json()
+      errored = true
+      if ((rerum_res.headers?.get("Content-Type") ?? "").includes("json")) {
+        // Special handling.  This does not go through to error-messenger.js
+        if (rerum_res.status === 409) {
+          const currentVersion = await rerum_res.json()
+          return res.status(409).json(currentVersion)
+        }
+      }
+      return rerum_res
+    })
+    .catch(err => {
+      throw err
+    })
+    // Send RERUM error responses to error-messenger.js
+    if (errored) return next(response)
+    const result = response
+    const location = result?.["@id"] ?? result?.id
+    const responseBody = { ...req.body, ...(result ?? {}) }
+    if (location) {
+      res.setHeader("Location", location)
+    }
+    res.status(200).json(responseBody)
   }
-  catch (err) {    
+  catch (err) {
     next(err)
   }
 })

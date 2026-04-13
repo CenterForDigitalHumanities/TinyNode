@@ -126,7 +126,7 @@ function create(form) {
         JSON.parse(obj)
     } catch (error) {
         console.error("You did not provide valid JSON")
-        setMessage("You did not provide valid JSON")
+        _customEvent("rerum-error", "You did not provide valid JSON", {}, error)
         document.getElementById("obj-viewer").style.display = "none"
         return false
     }
@@ -143,7 +143,7 @@ function create(form) {
     })
     .then(resultObj => {
         delete resultObj.new_obj_state
-        _customEvent("rerum-result", `Created new object at ${resultObj["@id"] ?? MISSING}.  See result below.`, resultObj)
+        _customEvent("rerum-result", `Created new object at ${resultObj["@id"] ?? resultObj.id ?? "MISSING"}.  See result below.`, resultObj)
     })
     .catch(err => {
         _customEvent("rerum-error", "There was an error trying to create object", {}, err)

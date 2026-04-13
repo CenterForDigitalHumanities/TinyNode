@@ -19,7 +19,8 @@ beforeEach(() => {
    */
   global.fetch = jest.fn(() =>
     Promise.resolve({
-      text: () => Promise.resolve("")
+      text: () => Promise.resolve(""),
+      ok: true
     })
   )
 })

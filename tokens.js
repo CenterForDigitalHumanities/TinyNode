@@ -6,7 +6,19 @@ import { parse, stringify } from "envfile"
 const sourcePath = '.env'
 
 // https://stackoverflow.com/a/69058154/1413302
-const isTokenExpired = (token) => (Date.now() >= JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString()).exp * 1000)
+const isTokenExpired = (token) => {
+    try {
+        const payload = token?.split('.')?.[1]
+        if (!payload) return false
+        const exp = JSON.parse(Buffer.from(payload, 'base64').toString())?.exp
+        if (!Number.isFinite(exp)) return false
+        return Date.now() >= exp * 1000
+    }
+    catch (err) {
+        // Treat malformed tokens as non-expired so middleware does not block requests.
+        return false
+    }
+}
 
 /**
  * Use the privately stored refresh token to generate a new access token for

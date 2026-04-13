@@ -6,7 +6,7 @@ const acceptedJsonContentTypes = new Set([
 export function httpError(message, status = 500, payload) {
   const error = new Error(message)
   error.status = status
-  if (body !== undefined) {
+  if (payload !== undefined) {
     error.payload = payload
   }
   return error

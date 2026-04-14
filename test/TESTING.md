@@ -52,6 +52,38 @@ This catches breaking changes like:
 - ✅ Wrong HTTP methods
 - ✅ Incorrect Content-Type headers
 
+### If-Overwritten-Version Header Behavior
+
+The overwrite route includes special handling for version conflict resolution via the `If-Overwritten-Version` header. Tests validate:
+
+1. **Request header passthrough** — `If-Overwritten-Version` from the request is forwarded upstream
+2. **Body extraction** — `__rerum.isOverwritten` in the request body becomes the upstream header
+3. **Precedence** — Body value takes priority over request header value
+4. **Absence handling** — Headers are only added when values are present
+
+Example from overwrite.test.js:
+```javascript
+// Passes request header through
+await request(routeTester)
+  .put("/overwrite")
+  .send({ "@id": rerumTinyTestObjId, testing: "item" })
+  .set("If-Overwritten-Version", "abc123")
+
+assert.equal(lastFetchOptions.headers["If-Overwritten-Version"], "abc123")
+
+// Or extracts from body __rerum.isOverwritten
+await request(routeTester)
+  .put("/overwrite")
+  .send({ "@id": rerumTinyTestObjId, __rerum: { isOverwritten: "xyz789" } })
+
+assert.equal(lastFetchOptions.headers["If-Overwritten-Version"], "xyz789")
+```
+
+This prevents accidental changes to:
+- ✅ Header passthrough logic
+- ✅ Body field name (`isOverwritten` vs other names)
+- ✅ Precedence between header and body sources
+
 ### Future Improvements
 
 Once RERUM provides a reliable test harness, TinyNode will:

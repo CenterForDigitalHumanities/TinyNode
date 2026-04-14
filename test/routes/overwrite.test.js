@@ -99,6 +99,54 @@ describe("Overwrite conflict and header contract behavior.  __rest __core", () =
   })
 })
 
+describe("Overwrite If-Overwritten-Version header behavior.  __mock_functions", () => {
+  it("Passes through If-Overwritten-Version request header to upstream.", async () => {
+    const response = await request(routeTester)
+      .put("/overwrite")
+      .send({ "@id": rerumTinyTestObjId, testing: "item" })
+      .set("Content-Type", "application/json")
+      .set("If-Overwritten-Version", "abc123")
+
+    assert.equal(response.statusCode, 200)
+    // Verify the header was passed through to upstream
+    assert.equal(lastFetchOptions.headers["If-Overwritten-Version"], "abc123")
+  })
+
+  it("Extracts __rerum.isOverwritten from body as If-Overwritten-Version.", async () => {
+    const response = await request(routeTester)
+      .put("/overwrite")
+      .send({ "@id": rerumTinyTestObjId, testing: "item", __rerum: { isOverwritten: "xyz789" } })
+      .set("Content-Type", "application/json")
+
+    assert.equal(response.statusCode, 200)
+    // Verify the body value was extracted and sent as header
+    assert.equal(lastFetchOptions.headers["If-Overwritten-Version"], "xyz789")
+  })
+
+  it("Body __rerum.isOverwritten takes precedence over request header.", async () => {
+    const response = await request(routeTester)
+      .put("/overwrite")
+      .send({ "@id": rerumTinyTestObjId, testing: "item", __rerum: { isOverwritten: "body-version" } })
+      .set("Content-Type", "application/json")
+      .set("If-Overwritten-Version", "header-version")
+
+    assert.equal(response.statusCode, 200)
+    // Body value should override header value
+    assert.equal(lastFetchOptions.headers["If-Overwritten-Version"], "body-version")
+  })
+
+  it("Header is sent when neither __rerum.isOverwritten nor request header is present.", async () => {
+    const response = await request(routeTester)
+      .put("/overwrite")
+      .send({ "@id": rerumTinyTestObjId, testing: "item" })
+      .set("Content-Type", "application/json")
+
+    assert.equal(response.statusCode, 200)
+    // Header should not be present or should be undefined
+    assert.strictEqual(lastFetchOptions.headers["If-Overwritten-Version"], undefined)
+  })
+})
+
 describe("Check that the properly used overwrite endpoints function and interact with RERUM.  __e2e", () => {
   it("'/overwrite' route can overwrite an object in RERUM.", async () => {
     const response = await request(routeTester)

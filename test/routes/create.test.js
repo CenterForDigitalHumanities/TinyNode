@@ -7,7 +7,7 @@ import createRoute from "../../routes/create.js"
 import { messenger } from "../../error-messenger.js"
 
 const routeTester = express()
-routeTester.use(express.json())
+routeTester.use(express.json({ type: ['application/json', 'application/ld+json'] }))
 routeTester.use(express.urlencoded({ extended: false }))
 routeTester.use("/create", createRoute)
 routeTester.use("/app/create", createRoute)
@@ -52,6 +52,17 @@ describe("Check that the request/response behavior of the TinyNode create route 
     assert.match(lastFetchOptions.headers["Authorization"], /^Bearer /, "Authorization header missing or invalid")
     assert.equal(lastFetchOptions.headers["Content-Type"], "application/json;charset=utf-8", "Content-Type header mismatch")
   })
+
+  it("Accepts application/ld+json content type.", async () => {
+    const response = await request(routeTester)
+      .post("/create")
+      .send({ test: "item" })
+      .set("Content-Type", "application/ld+json")
+
+    assert.equal(response.statusCode, 201)
+    assert.ok(response.header.location)
+    assert.equal(response.body.test, "item")
+  })
 })
 
 describe("Check that incorrect TinyNode create route usage results in expected RESTful responses from RERUM.  __rest __core", () => {
@@ -73,6 +84,12 @@ describe("Check that incorrect TinyNode create route usage results in expected R
       .set("Content-Type", "application/json")
       .send("not json")
     assert.equal(response.statusCode, 400)
+
+    response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "text/plain")
+      .send("plain text")
+    assert.equal(response.statusCode, 415)
 
   })
 })

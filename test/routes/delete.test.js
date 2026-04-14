@@ -4,12 +4,14 @@ import { afterEach, beforeEach, describe, it } from "node:test"
 import express from "express"
 import request from "supertest"
 import deleteRoute from "../../routes/delete.js"
+import { messenger } from "../../error-messenger.js"
 
 const routeTester = express()
-routeTester.use(express.json())
+routeTester.use(express.json({ type: ['application/json', 'application/ld+json'] }))
 routeTester.use(express.urlencoded({ extended: false }))
 routeTester.use("/delete", deleteRoute)
 routeTester.use("/app/delete", deleteRoute)
+routeTester.use(messenger)
 
 const rerumUri = `${process.env.RERUM_ID_PATTERN}_not_`
 const originalFetch = global.fetch
@@ -77,6 +79,12 @@ describe("Check that incorrect TinyNode delete route usage results in expected R
       .set("Content-Type", "application/json")
       .send({})
     assert.equal(response.statusCode, 400)
+
+    response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "text/plain")
+      .send("plain text")
+    assert.equal(response.statusCode, 415)
   })
 })
 

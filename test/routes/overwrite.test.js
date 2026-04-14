@@ -4,12 +4,14 @@ import { afterEach, beforeEach, describe, it } from "node:test"
 import express from "express"
 import request from "supertest"
 import overwriteRoute from "../../routes/overwrite.js"
+import { messenger } from "../../error-messenger.js"
 
 const routeTester = express()
-routeTester.use(express.json())
+routeTester.use(express.json({ type: ['application/json', 'application/ld+json'] }))
 routeTester.use(express.urlencoded({ extended: false }))
 routeTester.use("/overwrite", overwriteRoute)
 routeTester.use("/app/overwrite", overwriteRoute)
+routeTester.use(messenger)
 
 const rerumTinyTestObjId = `${process.env.RERUM_ID_PATTERN}tiny_tester`
 const originalFetch = global.fetch
@@ -77,6 +79,12 @@ describe("Check that incorrect TinyNode overwrite route usage results in expecte
       .set("Content-Type", "application/json")
       .send({ no: "@id" })
     assert.equal(response.statusCode, 400)
+
+    response = await request(routeTester)
+      .put("/overwrite")
+      .set("Content-Type", "text/plain")
+      .send("plain text")
+    assert.equal(response.statusCode, 415)
   })
 })
 
@@ -144,6 +152,18 @@ describe("Overwrite If-Overwritten-Version header behavior.  __mock_functions", 
     assert.equal(response.statusCode, 200)
     // Header should not be present or should be undefined
     assert.strictEqual(lastFetchOptions.headers["If-Overwritten-Version"], undefined)
+  })
+})
+
+describe("Overwrite network failure behavior.  __rest __core", () => {
+  it("Maps rejected fetch to 502.", async () => {
+    global.fetch = async () => { throw new Error("socket hang up") }
+
+    const response = await request(routeTester)
+      .put("/overwrite")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumTinyTestObjId, testing: "item" })
+    assert.equal(response.statusCode, 502)
   })
 })
 

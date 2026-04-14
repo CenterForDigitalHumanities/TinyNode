@@ -4,12 +4,14 @@ import { afterEach, beforeEach, describe, it } from "node:test"
 import express from "express"
 import request from "supertest"
 import updateRoute from "../../routes/update.js"
+import { messenger } from "../../error-messenger.js"
 
 const routeTester = express()
-routeTester.use(express.json())
+routeTester.use(express.json({ type: ['application/json', 'application/ld+json'] }))
 routeTester.use(express.urlencoded({ extended: false }))
 routeTester.use("/update", updateRoute)
 routeTester.use("/app/update", updateRoute)
+routeTester.use(messenger)
 
 const rerumUriOrig = `${process.env.RERUM_ID_PATTERN}_not_`
 const rerumUriUpdated = `${process.env.RERUM_ID_PATTERN}_updated_`
@@ -79,6 +81,24 @@ describe("Check that incorrect TinyNode update route usage results in expected R
       .set("Content-Type", "application/json")
       .send({ no: "@id" })
     assert.equal(response.statusCode, 400)
+
+    response = await request(routeTester)
+      .put("/update")
+      .set("Content-Type", "text/plain")
+      .send("plain text")
+    assert.equal(response.statusCode, 415)
+  })
+})
+
+describe("Update network failure behavior.  __rest __core", () => {
+  it("Maps rejected fetch to 502.", async () => {
+    global.fetch = async () => { throw new Error("socket hang up") }
+
+    const response = await request(routeTester)
+      .put("/update")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumUriOrig, testing: "item" })
+    assert.equal(response.statusCode, 502)
   })
 })
 

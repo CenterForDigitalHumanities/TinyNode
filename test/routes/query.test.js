@@ -7,7 +7,7 @@ import queryRoute from "../../routes/query.js"
 import { messenger } from "../../error-messenger.js"
 
 const routeTester = express()
-routeTester.use(express.json())
+routeTester.use(express.json({ type: ['application/json', 'application/ld+json'] }))
 routeTester.use(express.urlencoded({ extended: false }))
 routeTester.use("/query", queryRoute)
 routeTester.use("/app/query", queryRoute)
@@ -50,6 +50,16 @@ describe("Check that the request/response behavior of the TinyNode query route f
     assert.equal(lastFetchOptions.method, "POST", "Method should be POST")
     assert.match(lastFetchOptions.headers["Authorization"], /^Bearer /, "Authorization header missing or invalid")
     assert.equal(lastFetchOptions.headers["Content-Type"], "application/json;charset=utf-8", "Content-Type header mismatch")
+  })
+
+  it("Accepts application/ld+json content type.", async () => {
+    const response = await request(routeTester)
+      .post("/query")
+      .send({ test: "item" })
+      .set("Content-Type", "application/ld+json")
+
+    assert.equal(response.statusCode, 200)
+    assert.equal(response.body[0].test, "item")
   })
 })
 

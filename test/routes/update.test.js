@@ -15,13 +15,20 @@ const rerumUriOrig = `${process.env.RERUM_ID_PATTERN}_not_`
 const rerumUriUpdated = `${process.env.RERUM_ID_PATTERN}_updated_`
 const rerumTinyTestObjId = `${process.env.RERUM_ID_PATTERN}tiny_tester`
 const originalFetch = global.fetch
+let lastFetchUrl, lastFetchOptions
 
 beforeEach(() => {
-  global.fetch = async () => ({
-    json: async () => ({ "@id": rerumUriUpdated, testing: "item", __rerum: { stuff: "here" } }),
-    ok: true,
-    text: async () => "Descriptive Error Here"
-  })
+  lastFetchUrl = null
+  lastFetchOptions = null
+  global.fetch = async (url, opts) => {
+    lastFetchUrl = url
+    lastFetchOptions = opts
+    return {
+      json: async () => ({ "@id": rerumUriUpdated, testing: "item", __rerum: { stuff: "here" } }),
+      ok: true,
+      text: async () => "Descriptive Error Here"
+    }
+  }
 })
 
 afterEach(() => {
@@ -38,6 +45,12 @@ describe("Check that the request/response behavior of the TinyNode update route 
     assert.equal(response.statusCode, 200)
     assert.equal(response.header.location, rerumUriUpdated)
     assert.equal(response.body.testing, "item")
+    
+    // Verify upstream contract
+    assert.match(lastFetchUrl, /\/update$/, "URL should end with /update")
+    assert.equal(lastFetchOptions.method, "PUT", "Method should be PUT")
+    assert.match(lastFetchOptions.headers["Authorization"], /^Bearer /, "Authorization header missing or invalid")
+    assert.equal(lastFetchOptions.headers["Content-Type"], "application/json;charset=utf-8", "Content-Type header mismatch")
   })
 })
 

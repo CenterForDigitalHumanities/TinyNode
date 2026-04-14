@@ -15,13 +15,20 @@ routeTester.use(messenger)
 
 const rerumUri = `${process.env.RERUM_ID_PATTERN}_not_`
 const originalFetch = global.fetch
+let lastFetchUrl, lastFetchOptions
 
 beforeEach(() => {
-  global.fetch = async () => ({
-    json: async () => ({ "@id": rerumUri, test: "item", __rerum: { stuff: "here" } }),
-    ok: true,
-    text: async () => "Descriptive Error Here"
-  })
+  lastFetchUrl = null
+  lastFetchOptions = null
+  global.fetch = async (url, opts) => {
+    lastFetchUrl = url
+    lastFetchOptions = opts
+    return {
+      json: async () => ({ "@id": rerumUri, test: "item", __rerum: { stuff: "here" } }),
+      ok: true,
+      text: async () => "Descriptive Error Here"
+    }
+  }
 })
 
 afterEach(() => {
@@ -38,6 +45,12 @@ describe("Check that the request/response behavior of the TinyNode create route 
     assert.equal(response.statusCode, 201)
     assert.equal(response.header.location, rerumUri)
     assert.equal(response.body.test, "item")
+    
+    // Verify upstream contract
+    assert.match(lastFetchUrl, /\/create$/, "URL should end with /create")
+    assert.equal(lastFetchOptions.method, "POST", "Method should be POST")
+    assert.match(lastFetchOptions.headers["Authorization"], /^Bearer /, "Authorization header missing or invalid")
+    assert.equal(lastFetchOptions.headers["Content-Type"], "application/json;charset=utf-8", "Content-Type header mismatch")
   })
 })
 

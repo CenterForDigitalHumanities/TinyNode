@@ -15,13 +15,20 @@ routeTester.use(messenger)
 
 const rerumUri = `${process.env.RERUM_ID_PATTERN}_not_`
 const originalFetch = global.fetch
+let lastFetchUrl, lastFetchOptions
 
 beforeEach(() => {
-  global.fetch = async () => ({
-    json: async () => ([{ "@id": rerumUri, test: "item", __rerum: { stuff: "here" } }]),
-    ok: true,
-    text: async () => "Descriptive Error Here"
-  })
+  lastFetchUrl = null
+  lastFetchOptions = null
+  global.fetch = async (url, opts) => {
+    lastFetchUrl = url
+    lastFetchOptions = opts
+    return {
+      json: async () => ([{ "@id": rerumUri, test: "item", __rerum: { stuff: "here" } }]),
+      ok: true,
+      text: async () => "Descriptive Error Here"
+    }
+  }
 })
 
 afterEach(() => {
@@ -37,6 +44,12 @@ describe("Check that the request/response behavior of the TinyNode query route f
 
     assert.equal(response.statusCode, 200)
     assert.equal(response.body[0].test, "item")
+    
+    // Verify upstream contract
+    assert.match(lastFetchUrl, /\/query\?limit=10&skip=0$/, "URL should be /query with default limit and skip")
+    assert.equal(lastFetchOptions.method, "POST", "Method should be POST")
+    assert.match(lastFetchOptions.headers["Authorization"], /^Bearer /, "Authorization header missing or invalid")
+    assert.equal(lastFetchOptions.headers["Content-Type"], "application/json;charset=utf-8", "Content-Type header mismatch")
   })
 })
 

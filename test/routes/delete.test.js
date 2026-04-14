@@ -13,12 +13,19 @@ routeTester.use("/app/delete", deleteRoute)
 
 const rerumUri = `${process.env.RERUM_ID_PATTERN}_not_`
 const originalFetch = global.fetch
+let lastFetchUrl, lastFetchOptions
 
 beforeEach(() => {
-  global.fetch = async () => ({
-    text: async () => "",
-    ok: true
-  })
+  lastFetchUrl = null
+  lastFetchOptions = null
+  global.fetch = async (url, opts) => {
+    lastFetchUrl = url
+    lastFetchOptions = opts
+    return {
+      text: async () => "",
+      ok: true
+    }
+  }
 })
 
 afterEach(() => {
@@ -33,11 +40,21 @@ describe("Check that the request/response behavior of the TinyNode delete route 
       .set("Content-Type", "application/json")
 
     assert.equal(response.statusCode, 204)
+    
+    // Verify upstream contract for body-based delete
+    assert.match(lastFetchUrl, /\/delete$/, "URL should end with /delete")
+    assert.equal(lastFetchOptions.method, "DELETE", "Method should be DELETE")
+    assert.match(lastFetchOptions.headers["Authorization"], /^Bearer /, "Authorization header missing or invalid")
+    assert.equal(lastFetchOptions.headers["Content-Type"], "application/json; charset=utf-8", "Content-Type header mismatch")
 
     response = await request(routeTester)
       .delete("/delete/00000")
 
     assert.equal(response.statusCode, 204)
+    
+    // Verify upstream contract for path-based delete
+    assert.match(lastFetchUrl, /\/delete\/00000$/, "URL should end with /delete/00000")
+    assert.equal(lastFetchOptions.method, "DELETE", "Method should be DELETE")
   })
 })
 

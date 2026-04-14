@@ -28,6 +28,30 @@ Tests will pass even if:
 - RERUM response schemas change
 - Network connectivity issues occur
 
+### Upstream Contract Validation
+
+To improve coverage, each route's `__mock_functions` test now **validates the upstream contract** by asserting on:
+
+- **URL**: Verifies the correct RERUM endpoint is called (e.g., `/create`, `/query?limit=10&skip=0`)
+- **HTTP Method**: Confirms POST for create/query, PUT for update/overwrite, DELETE for delete
+- **Authorization Header**: Ensures Bearer token is present and properly formatted
+- **Content-Type Header**: Validates correct JSON encoding
+
+Example from create.test.js:
+```javascript
+// Verify upstream contract
+assert.match(lastFetchUrl, /\/create$/, "URL should end with /create")
+assert.equal(lastFetchOptions.method, "POST", "Method should be POST")
+assert.match(lastFetchOptions.headers["Authorization"], /^Bearer /, "Authorization header missing or invalid")
+assert.equal(lastFetchOptions.headers["Content-Type"], "application/json;charset=utf-8", "Content-Type header mismatch")
+```
+
+This catches breaking changes like:
+- ✅ Typos in endpoint URLs (`/createx` instead of `/create`)
+- ✅ Missing or incorrect Authorization headers
+- ✅ Wrong HTTP methods
+- ✅ Incorrect Content-Type headers
+
 ### Future Improvements
 
 Once RERUM provides a reliable test harness, TinyNode will:
@@ -43,5 +67,6 @@ Current tests focus on:
 - Error message generation
 - REST compliance (correct status codes, headers)
 - TinyNode-specific business logic
+- Upstream contract validation (URL, method, headers)
 
 These are all validated using mocked fetch responses. See individual test files for mock setup details.

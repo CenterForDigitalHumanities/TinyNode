@@ -115,6 +115,56 @@ describe("Check that incorrect TinyNode query route usage results in expected RE
   })
 })
 
+describe("Query upstream and network failure behavior.  __rest __core", () => {
+  it("Preserves upstream text error message when query returns non-ok.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 503,
+      text: async () => "Upstream query failure"
+    })
+
+    const response = await request(routeTester)
+      .post("/query")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /Upstream query failure/)
+  })
+
+  it("Falls back to generic RERUM error text when upstream .text() throws.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 500,
+      text: async () => {
+        throw new Error("text stream consumed")
+      }
+    })
+
+    const response = await request(routeTester)
+      .post("/query")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /A RERUM error occurred/)
+  })
+
+  it("Maps rejected fetch to 502.", async () => {
+    global.fetch = async () => {
+      throw new Error("socket hang up")
+    }
+
+    const response = await request(routeTester)
+      .post("/query")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /A RERUM error occurred/)
+  })
+})
+
 describe("Check that the properly used query endpoints function and interact with RERUM.  __e2e", () => {
   it("'/query' route can save an object to RERUM.", async () => {
     const response = await request(routeTester)

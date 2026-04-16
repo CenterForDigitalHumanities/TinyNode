@@ -30,7 +30,7 @@ Tests will pass even if:
 
 ### Upstream Contract Validation
 
-To improve coverage, each route's `__mock_functions` test now **validates the upstream contract** by asserting on:
+To improve coverage, each route's `__mock_functions` test **validates the upstream contract** by asserting on:
 
 - **URL**: Verifies the correct RERUM endpoint is called (e.g., `/create`, `/query?limit=10&skip=0`)
 - **HTTP Method**: Confirms POST for create/query, PUT for update/overwrite, DELETE for delete
@@ -51,6 +51,8 @@ This catches breaking changes like:
 - ✅ Missing or incorrect Authorization headers
 - ✅ Wrong HTTP methods
 - ✅ Incorrect Content-Type headers
+
+> This is not yet connected to the RERUM API or tests directly! It may get out of sync!
 
 ### If-Overwritten-Version Header Behavior
 

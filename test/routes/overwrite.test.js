@@ -52,6 +52,22 @@ describe("Check that the request/response behavior of the TinyNode overwrite rou
     assert.match(lastFetchOptions.headers["Authorization"], /^Bearer /, "Authorization header missing or invalid")
     assert.equal(lastFetchOptions.headers["Content-Type"], "application/json;charset=utf-8", "Content-Type header mismatch")
   })
+
+  it("Falls back to rerumResponse.id when @id is absent.", async () => {
+    const fallbackUri = `${process.env.RERUM_ID_PATTERN}_fallback_`
+    global.fetch = async () => ({
+      json: async () => ({ id: fallbackUri, testing: "item" }),
+      ok: true
+    })
+
+    const response = await request(routeTester)
+      .put("/overwrite")
+      .send({ "@id": rerumTinyTestObjId, testing: "item" })
+      .set("Content-Type", "application/json")
+
+    assert.equal(response.statusCode, 200)
+    assert.equal(response.header.location, fallbackUri)
+  })
 })
 
 describe("Check that incorrect TinyNode overwrite route usage results in expected RESTful responses from RERUM.  __rest __core", () => {

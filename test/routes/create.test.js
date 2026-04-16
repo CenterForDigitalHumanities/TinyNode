@@ -63,6 +63,22 @@ describe("Check that the request/response behavior of the TinyNode create route 
     assert.ok(response.header.location)
     assert.equal(response.body.test, "item")
   })
+
+  it("Falls back to rerumResponse.id when @id is absent.", async () => {
+    const fallbackUri = `${process.env.RERUM_ID_PATTERN}_fallback_`
+    global.fetch = async () => ({
+      json: async () => ({ id: fallbackUri, test: "item" }),
+      ok: true
+    })
+
+    const response = await request(routeTester)
+      .post("/create")
+      .send({ test: "item" })
+      .set("Content-Type", "application/json")
+
+    assert.equal(response.statusCode, 201)
+    assert.equal(response.header.location, fallbackUri)
+  })
 })
 
 describe("Check that incorrect TinyNode create route usage results in expected RESTful responses from RERUM.  __rest __core", () => {

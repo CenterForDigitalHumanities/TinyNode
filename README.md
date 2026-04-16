@@ -38,7 +38,26 @@ OPEN_API_CORS = false
 
 Now, you can run tests
 ```shell
-npm run runtest
+npm run allTests
+```
+
+For fast local checks, run targeted suites:
+```shell
+npm run coreTests
+npm run existsTests
+npm run functionalTests
+```
+
+Run browser smoke tests (optional for local development):
+```shell
+npm run e2e:install
+npm run E2Etests
+```
+
+Run the CI-equivalent command groups locally:
+```shell
+npm run ci:fast
+npm run ci:full
 ```
 
 And start the app

@@ -5,7 +5,6 @@ import { parse, stringify } from "envfile"
 
 const sourcePath = '.env'
 
-// https://stackoverflow.com/a/69058154/1413302
 const isTokenExpired = (token) => {
     try {
         const payload = token?.split('.')?.[1]

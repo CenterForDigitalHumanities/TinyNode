@@ -104,4 +104,68 @@ describe("Delete network failure and passthrough behavior.  __rest __core", () =
       .delete("/delete/00000")
     assert.equal(response.statusCode, 502)
   })
+
+  it("Preserves upstream text error message for body delete when response is non-ok.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 503,
+      text: async () => "Upstream body delete failure"
+    })
+
+    const response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumUri })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /Upstream body delete failure/)
+  })
+
+  it("Falls back to generic RERUM error text for body delete when upstream .text() throws.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 500,
+      text: async () => {
+        throw new Error("text stream consumed")
+      }
+    })
+
+    const response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumUri })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /A RERUM error occurred/)
+  })
+
+  it("Preserves upstream text error message for path delete when response is non-ok.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 503,
+      text: async () => "Upstream path delete failure"
+    })
+
+    const response = await request(routeTester)
+      .delete("/delete/00000")
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /Upstream path delete failure/)
+  })
+
+  it("Falls back to generic RERUM error text for path delete when upstream .text() throws.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 500,
+      text: async () => {
+        throw new Error("text stream consumed")
+      }
+    })
+
+    const response = await request(routeTester)
+      .delete("/delete/00000")
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /A RERUM error occurred/)
+  })
 })

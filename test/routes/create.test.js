@@ -53,6 +53,18 @@ describe("Check that the request/response behavior of the TinyNode create route 
     assert.equal(lastFetchOptions.headers["Content-Type"], "application/json;charset=utf-8", "Content-Type header mismatch")
   })
 
+  it("Converts body id to _id before sending upstream.", async () => {
+    const response = await request(routeTester)
+      .post("/create")
+      .send({ id: "https://example.org/id/abc123", test: "item" })
+      .set("Content-Type", "application/json")
+
+    assert.equal(response.statusCode, 201)
+    const upstreamBody = JSON.parse(lastFetchOptions.body)
+    assert.equal(upstreamBody._id, "abc123")
+    assert.equal(upstreamBody.id, "https://example.org/id/abc123")
+  })
+
   it("Accepts application/ld+json content type.", async () => {
     const response = await request(routeTester)
       .post("/create")
@@ -136,6 +148,39 @@ describe("Check that TinyNode create route propagates upstream and network error
       .post("/create")
       .set("Content-Type", "application/json")
       .send({ test: "item" })
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /A RERUM error occurred/)
+  })
+
+  it("Falls back to generic RERUM error text when upstream .text() throws.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 500,
+      text: async () => {
+        throw new Error("text stream consumed")
+      }
+    })
+
+    const response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /A RERUM error occurred/)
+  })
+
+  it("Maps successful upstream payload without id fields to 502.", async () => {
+    global.fetch = async () => ({
+      ok: true,
+      json: async () => ({ test: "item" })
+    })
+
+    const response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
     assert.equal(response.statusCode, 502)
     assert.match(response.text, /A RERUM error occurred/)
   })

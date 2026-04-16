@@ -116,6 +116,55 @@ describe("Update network failure behavior.  __rest __core", () => {
       .send({ "@id": rerumUriOrig, testing: "item" })
     assert.equal(response.statusCode, 502)
   })
+
+  it("Preserves upstream text error message when update returns non-ok.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 503,
+      text: async () => "Upstream update failure"
+    })
+
+    const response = await request(routeTester)
+      .put("/update")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumUriOrig, testing: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /Upstream update failure/)
+  })
+
+  it("Falls back to generic RERUM error text when upstream .text() throws.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 500,
+      text: async () => {
+        throw new Error("text stream consumed")
+      }
+    })
+
+    const response = await request(routeTester)
+      .put("/update")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumUriOrig, testing: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /A RERUM error occurred/)
+  })
+
+  it("Maps successful upstream payload without id fields to 502.", async () => {
+    global.fetch = async () => ({
+      ok: true,
+      json: async () => ({ testing: "item" })
+    })
+
+    const response = await request(routeTester)
+      .put("/update")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumUriOrig, testing: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /A RERUM error occurred/)
+  })
 })
 
 describe("Check that the properly used update endpoints function and interact with RERUM.  __e2e", () => {

@@ -13,6 +13,19 @@ function appWith(routeHandler) {
 }
 
 describe("Check shared error messenger behavior.  __rest __core", () => {
+  it("Returns early when headers are already sent.", async () => {
+    const app = express()
+    app.get("/test", (req, res, next) => {
+      res.write("partial")
+      next(new Error("late error"))
+    })
+    app.use(messenger)
+
+    const response = await request(app).get("/test")
+    assert.equal(response.statusCode, 200)
+    assert.match(response.text, /partial/)
+  })
+
   it("Returns structured JSON error bodies when upstream responds with JSON.", async () => {
     const app = appWith((req, res, next) => {
       next({
@@ -53,6 +66,20 @@ describe("Check shared error messenger behavior.  __rest __core", () => {
     const response = await request(app).get("/test")
     assert.equal(response.statusCode, 502)
     assert.match(response.text, /Upstream unavailable/)
+  })
+
+  it("Sends plain text body from upstream text() when provided.", async () => {
+    const app = appWith((req, res, next) => {
+      next({
+        status: 418,
+        headers: { get: () => "text/plain" },
+        text: async () => "Teapot exploded"
+      })
+    })
+
+    const response = await request(app).get("/test")
+    assert.equal(response.statusCode, 418)
+    assert.match(response.text, /Teapot exploded/)
   })
 
   it("Returns structured payload when error carries payload.", async () => {

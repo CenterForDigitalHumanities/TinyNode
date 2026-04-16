@@ -51,6 +51,21 @@ describe("Check shared error messenger behavior.  __rest __core", () => {
     assert.match(response.text, /boom/)
   })
 
+  it("Uses statusCode and statusMessage fallback fields when present.", async () => {
+    const app = appWith((req, res, next) => {
+      next({
+        statusCode: 499,
+        statusMessage: "Client closed request",
+        headers: { get: () => "text/plain" },
+        text: async () => ""
+      })
+    })
+
+    const response = await request(app).get("/test")
+    assert.equal(response.statusCode, 499)
+    assert.match(response.text, /Client closed request/)
+  })
+
   it("Uses fallback message if .text() throws.", async () => {
     const app = appWith((req, res, next) => {
       next({

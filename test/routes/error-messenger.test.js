@@ -16,7 +16,7 @@ describe("Check shared error messenger behavior.  __rest __core", () => {
   it("Returns early when headers are already sent.", async () => {
     const app = express()
     app.get("/test", (req, res, next) => {
-      res.write("partial")
+      res.end("partial")
       next(new Error("late error"))
     })
     app.use(messenger)
@@ -108,5 +108,83 @@ describe("Check shared error messenger behavior.  __rest __core", () => {
     const response = await request(app).get("/test")
     assert.equal(response.statusCode, 400)
     assert.equal(response.body.code, "BAD_INPUT")
+  })
+})
+
+function createMockRes(headersSent = false) {
+  const res = {
+    headersSent,
+    statusCode: null,
+    sentText: null,
+    sentJson: null,
+    setHeaders: {},
+    status(code) {
+      this.statusCode = code
+      return this
+    },
+    json(payload) {
+      this.sentJson = payload
+      return this
+    },
+    send(text) {
+      this.sentText = text
+      return this
+    },
+    set(name, value) {
+      this.setHeaders[name] = value
+      return this
+    }
+  }
+  return res
+}
+
+describe("Check shared error messenger unit branches.  __core", () => {
+  it("Returns immediately when headersSent is true.", async () => {
+    const res = createMockRes(true)
+    await messenger(new Error("ignored"), {}, res, () => {})
+    assert.equal(res.statusCode, null)
+    assert.equal(res.sentText, null)
+    assert.equal(res.sentJson, null)
+  })
+
+  it("Sends payload JSON when payload is present.", async () => {
+    const res = createMockRes(false)
+    await messenger({ status: 409, payload: { code: "CONFLICT" } }, {}, res, () => {})
+    assert.equal(res.statusCode, 409)
+    assert.equal(res.sentJson.code, "CONFLICT")
+  })
+
+  it("Uses upstream JSON response when content-type is JSON.", async () => {
+    const res = createMockRes(false)
+    await messenger(
+      {
+        status: 422,
+        headers: { get: () => "application/json; charset=utf-8" },
+        json: async () => ({ detail: "bad request" })
+      },
+      {},
+      res,
+      () => {}
+    )
+    assert.equal(res.statusCode, 422)
+    assert.equal(res.sentJson.detail, "bad request")
+  })
+
+  it("Sends plain text and sets content-type for non-JSON upstream errors.", async () => {
+    const res = createMockRes(false)
+    await messenger(
+      {
+        status: 503,
+        message: "fallback",
+        headers: { get: () => "text/plain" },
+        text: async () => "upstream text"
+      },
+      {},
+      res,
+      () => {}
+    )
+    assert.equal(res.statusCode, 503)
+    assert.equal(res.sentText, "upstream text")
+    assert.equal(res.setHeaders["Content-Type"], "text/plain; charset=utf-8")
   })
 })

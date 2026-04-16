@@ -181,6 +181,55 @@ describe("Overwrite network failure behavior.  __rest __core", () => {
       .send({ "@id": rerumTinyTestObjId, testing: "item" })
     assert.equal(response.statusCode, 502)
   })
+
+  it("Preserves upstream text error message for non-409 overwrite failures.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 503,
+      text: async () => "Upstream overwrite failure"
+    })
+
+    const response = await request(routeTester)
+      .put("/overwrite")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumTinyTestObjId, testing: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /Upstream overwrite failure/)
+  })
+
+  it("Falls back to generic RERUM error text when overwrite upstream .text() throws.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 500,
+      text: async () => {
+        throw new Error("text stream consumed")
+      }
+    })
+
+    const response = await request(routeTester)
+      .put("/overwrite")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumTinyTestObjId, testing: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /A RERUM error occurred/)
+  })
+
+  it("Maps successful overwrite payload without id fields to 502.", async () => {
+    global.fetch = async () => ({
+      ok: true,
+      json: async () => ({ testing: "item" })
+    })
+
+    const response = await request(routeTester)
+      .put("/overwrite")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumTinyTestObjId, testing: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /A RERUM error occurred/)
+  })
 })
 
 describe("Check that the properly used overwrite endpoints function and interact with RERUM.  __e2e", () => {

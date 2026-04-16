@@ -152,6 +152,24 @@ describe("Check that TinyNode create route propagates upstream and network error
     assert.match(response.text, /A RERUM error occurred/)
   })
 
+  it("Falls back to generic RERUM error text when upstream .text() throws.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 500,
+      text: async () => {
+        throw new Error("text stream consumed")
+      }
+    })
+
+    const response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /A RERUM error occurred/)
+  })
+
   it("Maps successful upstream payload without id fields to 502.", async () => {
     global.fetch = async () => ({
       ok: true,

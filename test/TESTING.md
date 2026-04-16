@@ -23,6 +23,7 @@ Currently, RERUM does not provide a reliable testing harness that TinyNode can d
 ### What This Means
 
 Tests will pass even if:
+
 - RERUM API endpoints become unavailable
 - RERUM API paths are broken (e.g., `/create` → `/createx`)
 - RERUM response schemas change
@@ -52,8 +53,6 @@ This catches breaking changes like:
 - ✅ Wrong HTTP methods
 - ✅ Incorrect Content-Type headers
 
-> This is not yet connected to the RERUM API or tests directly! It may get out of sync!
-
 ### If-Overwritten-Version Header Behavior
 
 The overwrite route includes special handling for version conflict resolution via the `If-Overwritten-Version` header. Tests validate:
@@ -82,6 +81,7 @@ assert.equal(lastFetchOptions.headers["If-Overwritten-Version"], "xyz789")
 ```
 
 This prevents accidental changes to:
+
 - ✅ Header passthrough logic
 - ✅ Body field name (`isOverwritten` vs other names)
 - ✅ Precedence between header and body sources
@@ -89,6 +89,7 @@ This prevents accidental changes to:
 ### Future Improvements
 
 Once RERUM provides a reliable test harness, TinyNode will:
+
 1. Replace generic mocks with schema-based mocks that validate against RERUM's actual API schema
 2. Add integration tests that verify real requests to a test RERUM instance
 3. Improve test coverage for error handling scenarios when RERUM is unreachable or responds unexpectedly
@@ -96,6 +97,7 @@ Once RERUM provides a reliable test harness, TinyNode will:
 ### Testing Mocked Behavior
 
 Current tests focus on:
+
 - Request validation and marshaling
 - Route response formatting
 - Error message generation

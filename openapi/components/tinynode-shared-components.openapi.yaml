@@ -1,0 +1,105 @@
+openapi: 3.0.3
+info:
+  title: TinyNode Shared Components
+  version: 0.1.0-alpha.1
+  description: >-
+    Shared schema components reused by multiple TinyNode seams. TinyNode route
+    handlers are sourced from CenterForDigitalHumanities/TinyNode routes/
+    (create.js, update.js, overwrite.js, query.js). TinyNode persists to
+    rerum_server_nodejs at store.rerum.io/v1.
+externalDocs:
+  description: TinyNode routes source of truth
+  url: https://github.com/CenterForDigitalHumanities/TinyNode/tree/main/routes
+x-upstream-provider:
+  name: rerum_server_nodejs
+  baseUrl: https://store.rerum.io/v1
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [ok]
+      additionalProperties: true
+    ReadinessResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [ready]
+        timestamp:
+          type: string
+          format: date-time
+      additionalProperties: true
+    OpenApiDocumentResponse:
+      type: object
+      additionalProperties: true
+    DocumentPayload:
+      type: object
+      description: >-
+        Request document with stable core fields and open extension fields.
+        Consumer-specific metadata can be included without breaking this
+        contract.
+      properties:
+        '@id':
+          type: string
+          description: Existing identifier for update/overwrite semantics.
+        '@context':
+          description: JSON-LD context when present.
+          oneOf:
+            - type: string
+            - type: array
+            - type: object
+        '@type':
+          description: JSON-LD type when present.
+          oneOf:
+            - type: string
+            - type: array
+      additionalProperties: true
+    DocumentResponse:
+      type: object
+      description: Response document with required identity and open extension fields.
+      required:
+        - '@id'
+      properties:
+        '@id':
+          type: string
+          description: Canonical TinyNode identifier for the document.
+      additionalProperties: true
+    QueryResponse:
+      description: Query responses may be a raw array or a wrapped object.
+      oneOf:
+        - type: array
+          items:
+            $ref: '#/components/schemas/DocumentResponse'
+        - type: object
+          required:
+            - results
+          properties:
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/DocumentResponse'
+            total:
+              type: integer
+              minimum: 0
+          additionalProperties: true
+    ErrorResponse:
+      type: object
+      description: Generic error envelope used across operations.
+      properties:
+        message:
+          type: string
+        error:
+          type: string
+        status:
+          type: integer
+          minimum: 100
+          maximum: 599
+      additionalProperties: true

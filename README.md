@@ -60,6 +60,10 @@ npm run ci:fast
 npm run ci:full
 ```
 
+### Shared OpenAPI Artifact
+TinyNode owns the canonical shared OpenAPI artifact at `openapi/components/tinynode-shared-components.openapi.yaml`.
+When that file changes on `main`, the `TinyNode Shared OpenAPI Sync` workflow copies it into `cubap/rerum_openapi` at `schemas/openapi/tinynode-shared-components.openapi.yaml` and opens or updates the sync pull request there. The workflow expects a repository secret named `OPENAPI_SYNC_TOKEN` with permission to push a sync branch and open pull requests in `cubap/rerum_openapi`.
+
 And start the app
 ```shell
 npm start

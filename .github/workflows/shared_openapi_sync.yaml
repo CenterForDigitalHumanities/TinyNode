@@ -1,0 +1,52 @@
+name: TinyNode Shared OpenAPI Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - openapi/components/tinynode-shared-components.openapi.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync shared OpenAPI artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout TinyNode
+        uses: actions/checkout@v4
+
+      - name: Checkout receiver repository
+        uses: actions/checkout@v4
+        with:
+          repository: cubap/rerum_openapi
+          ref: main
+          token: ${{ secrets.OPENAPI_SYNC_TOKEN }}
+          path: receiver
+
+      - name: Verify receiver stub exists
+        run: test -f receiver/schemas/openapi/tinynode-shared-components.openapi.yaml
+
+      - name: Copy canonical shared artifact
+        run: cp openapi/components/tinynode-shared-components.openapi.yaml receiver/schemas/openapi/tinynode-shared-components.openapi.yaml
+
+      - name: Create or update sync pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.OPENAPI_SYNC_TOKEN }}
+          path: receiver
+          add-paths: schemas/openapi/tinynode-shared-components.openapi.yaml
+          commit-message: "chore: sync TinyNode shared OpenAPI artifact"
+          branch: sync/tinynode-shared-openapi
+          base: main
+          delete-branch: true
+          title: "chore: sync TinyNode shared OpenAPI artifact"
+          body: |
+            Syncs the canonical TinyNode shared OpenAPI artifact from CenterForDigitalHumanities/TinyNode.
+
+            - Source commit: ${{ github.sha }}
+            - Source artifact: `openapi/components/tinynode-shared-components.openapi.yaml`
+            - Target artifact: `schemas/openapi/tinynode-shared-components.openapi.yaml`

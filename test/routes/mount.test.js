@@ -65,7 +65,9 @@ describe("Check to see that critical repo files are present", () => {
     assert.equal(fs.existsSync(`${filePath}README.md`), true)
     assert.equal(fs.existsSync(`${filePath}.gitignore`), true)
     assert.equal(fs.existsSync(`${filePath}package.json`), true)
-    assert.equal(fs.existsSync(`${filePath}.github/workflows/shared_openapi_sync.yaml`), true)
-    assert.equal(fs.existsSync(`${filePath}openapi/components/tinynode-shared-components.openapi.yaml`), true)
+    assert.equal(fs.existsSync(`${filePath}.github/workflows/shared_openapi_sync.yaml`), true,
+      "shared_openapi_sync.yaml workflow is missing — the receiver repo will stop receiving updates")
+    assert.equal(fs.existsSync(`${filePath}openapi/components/tinynode-shared-components.openapi.yaml`), true,
+      "canonical shared OpenAPI artifact is missing — sync workflow has nothing to publish")
   })
 })

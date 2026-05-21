@@ -91,15 +91,8 @@ components:
               minimum: 0
           additionalProperties: true
     ErrorResponse:
-      type: object
-      description: Generic error envelope used across operations.
-      properties:
-        message:
-          type: string
-        error:
-          type: string
-        status:
-          type: integer
-          minimum: 100
-          maximum: 599
-      additionalProperties: true
+      description: >-
+        TinyNode emits plain-text error bodies (Content-Type: text/plain). The
+        response body is the error message string; the HTTP status code carries
+        the category. Consumers should not expect a structured JSON envelope.
+      type: string

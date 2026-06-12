@@ -58,6 +58,7 @@ jobs:
     needs:
       - merge-branch
       - test
+    environment: development
     strategy:
       matrix:
         node-version:

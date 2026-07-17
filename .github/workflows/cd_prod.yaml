@@ -22,6 +22,7 @@ jobs:
   deploy:
     needs:
       - test
+    environment: production
     strategy:
       matrix:
         node-version:

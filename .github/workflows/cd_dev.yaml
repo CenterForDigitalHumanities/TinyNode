@@ -2,6 +2,7 @@ name: TinyNode Dev Deploy on PR to main
 on:
   pull_request:
     branches: main
+  workflow_dispatch:
 jobs:
   merge-branch:
     runs-on: ubuntu-latest

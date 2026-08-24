@@ -32,16 +32,16 @@
     "ci:full": "npm run e2e:install && npm run E2Etests && npm run coverage"
   },
   "dependencies": {
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "debug": "~4.4.3",
-    "dotenv": "^17.2.3",
+    "dotenv": "^17.4.2",
     "envfile": "^7.1.0",
     "express": "^5.2.1",
-    "morgan": "~1.10.1"
+    "morgan": "~1.11.0"
   },
   "devDependencies": {
-    "c8": "^10.1.3",
-    "playwright": "^1.54.2",
-    "supertest": "^7.1.4"
+    "c8": "^12.0.0",
+    "playwright": "^1.62.1",
+    "supertest": "^7.2.2"
   }
 }

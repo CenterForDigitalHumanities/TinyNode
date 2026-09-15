@@ -15,6 +15,7 @@ routeTester.use(messenger)
 
 const rerumUri = `${process.env.RERUM_ID_PATTERN}_not_`
 const originalFetch = global.fetch
+const paginationHeaders = ["pagination-limit", "pagination-skip", "pagination-limit-max", "pagination-skip-max"]
 let lastFetchUrl, lastFetchOptions
 
 beforeEach(() => {
@@ -24,6 +25,7 @@ beforeEach(() => {
     lastFetchUrl = url
     lastFetchOptions = opts
     return {
+      headers: new Headers(),
       json: async () => ([{ "@id": rerumUri, test: "item", __rerum: { stuff: "here" } }]),
       ok: true,
       text: async () => "Descriptive Error Here"
@@ -118,6 +120,7 @@ describe("Check that incorrect TinyNode query route usage results in expected RE
 describe("Query upstream and network failure behavior.  __rest __core", () => {
   it("Preserves upstream text error message when query returns non-ok.", async () => {
     global.fetch = async () => ({
+      headers: new Headers(),
       ok: false,
       status: 503,
       text: async () => "Upstream query failure"
@@ -134,6 +137,7 @@ describe("Query upstream and network failure behavior.  __rest __core", () => {
 
   it("Falls back to generic RERUM error text when upstream .text() throws.", async () => {
     global.fetch = async () => ({
+      headers: new Headers(),
       ok: false,
       status: 500,
       text: async () => {
@@ -162,6 +166,109 @@ describe("Query upstream and network failure behavior.  __rest __core", () => {
 
     assert.equal(response.statusCode, 502)
     assert.match(response.text, /A RERUM error occurred/)
+    for (const header of paginationHeaders) {
+      assert.equal(response.headers[header], undefined, `${header} should not be set when RERUM was not reached`)
+    }
+  })
+})
+
+describe("Query pagination header forwarding.  __rest __core", () => {
+  it("Forwards every Pagination-* header RERUM returns on a successful query.", async () => {
+    global.fetch = async () => ({
+      headers: new Headers({
+        "Pagination-Limit": "500",
+        "Pagination-Skip": "0",
+        "Pagination-Limit-Max": "500",
+        "Pagination-Skip-Max": "100000"
+      }),
+      json: async () => ([{ "@id": rerumUri, test: "item" }]),
+      ok: true
+    })
+
+    const response = await request(routeTester)
+      .post("/query?limit=1000")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 200)
+    assert.equal(response.body[0].test, "item")
+    assert.equal(response.headers["pagination-limit"], "500")
+    assert.equal(response.headers["pagination-skip"], "0")
+    assert.equal(response.headers["pagination-limit-max"], "500")
+    assert.equal(response.headers["pagination-skip-max"], "100000")
+  })
+
+  it("Forwards the Pagination-* headers RERUM returns on an error response.", async () => {
+    global.fetch = async () => ({
+      headers: new Headers({
+        "Pagination-Limit-Max": "500",
+        "Pagination-Skip-Max": "100000"
+      }),
+      ok: false,
+      status: 400,
+      text: async () => "The 'skip' URL parameter of 100001 is beyond the maximum of 100000."
+    })
+
+    const response = await request(routeTester)
+      .post("/query?skip=100001")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /beyond the maximum of 100000/)
+    assert.equal(response.headers["pagination-limit-max"], "500")
+    assert.equal(response.headers["pagination-skip-max"], "100000")
+    assert.equal(response.headers["pagination-limit"], undefined)
+    assert.equal(response.headers["pagination-skip"], undefined)
+  })
+
+  it("Adds no Pagination-* headers when RERUM sends none.", async () => {
+    let response = await request(routeTester)
+      .post("/query")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 200)
+    for (const header of paginationHeaders) {
+      assert.equal(response.headers[header], undefined, `${header} should not be set on a 200`)
+    }
+
+    global.fetch = async () => ({
+      headers: new Headers(),
+      ok: false,
+      status: 500,
+      text: async () => "Upstream query failure"
+    })
+
+    response = await request(routeTester)
+      .post("/query")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 502)
+    for (const header of paginationHeaders) {
+      assert.equal(response.headers[header], undefined, `${header} should not be set on a 502`)
+    }
+  })
+
+  it("Does not forward unrelated RERUM response headers.", async () => {
+    global.fetch = async () => ({
+      headers: new Headers({
+        "Pagination-Limit": "10",
+        "X-Unrelated": "nope"
+      }),
+      json: async () => ([{ "@id": rerumUri, test: "item" }]),
+      ok: true
+    })
+
+    const response = await request(routeTester)
+      .post("/query")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 200)
+    assert.equal(response.headers["pagination-limit"], "10")
+    assert.equal(response.headers["x-unrelated"], undefined)
   })
 })
 

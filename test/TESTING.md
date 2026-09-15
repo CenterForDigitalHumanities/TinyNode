@@ -86,17 +86,6 @@ This prevents accidental changes to:
 - ✅ Body field name (`isOverwritten` vs other names)
 - ✅ Precedence between header and body sources
 
-### Pagination Header Forwarding
-
-RERUM reports the applied and maximum `limit` and `skip` on `/query` responses in the `Pagination-Limit`, `Pagination-Skip`, `Pagination-Limit-Max`, and `Pagination-Skip-Max` headers. The query route forwards them to the client. Tests in query.test.js validate:
-
-1. **Success path** — every `Pagination-*` header RERUM returns is on the 200
-2. **Error path** — the `Pagination-*` headers RERUM returns on a failure are on the 502
-3. **Absence handling** — no `Pagination-*` headers are added when RERUM sends none, or when RERUM is never reached
-4. **No over-forwarding** — unrelated RERUM response headers are not copied
-
-Fetch mocks in query.test.js must include `headers: new Headers()` because the route reads `resp.headers`.
-
 ### Future Improvements
 
 Once RERUM provides a reliable test harness, TinyNode will:

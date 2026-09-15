@@ -3,7 +3,7 @@ import { httpError, verifyJsonContentType } from "../rest.js"
 import { fetchRerum } from "../rerum.js"
 const router = express.Router()
 
-// RERUM reports the applied and maximum limit and skip in these headers.  Forward them so clients can tell a truncated page from a final one.
+// RERUM reports the applied and maximum limit and skip in these headers.
 const PAGINATION_HEADERS = ["Pagination-Limit", "Pagination-Skip", "Pagination-Limit-Max", "Pagination-Skip-Max"]
 
 /* POST a query to the thing. */

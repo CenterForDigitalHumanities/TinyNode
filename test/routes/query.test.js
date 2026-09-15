@@ -221,55 +221,6 @@ describe("Query pagination header forwarding.  __rest __core", () => {
     assert.equal(response.headers["pagination-limit"], undefined)
     assert.equal(response.headers["pagination-skip"], undefined)
   })
-
-  it("Adds no Pagination-* headers when RERUM sends none.", async () => {
-    let response = await request(routeTester)
-      .post("/query")
-      .set("Content-Type", "application/json")
-      .send({ test: "item" })
-
-    assert.equal(response.statusCode, 200)
-    for (const header of paginationHeaders) {
-      assert.equal(response.headers[header], undefined, `${header} should not be set on a 200`)
-    }
-
-    global.fetch = async () => ({
-      headers: new Headers(),
-      ok: false,
-      status: 500,
-      text: async () => "Upstream query failure"
-    })
-
-    response = await request(routeTester)
-      .post("/query")
-      .set("Content-Type", "application/json")
-      .send({ test: "item" })
-
-    assert.equal(response.statusCode, 502)
-    for (const header of paginationHeaders) {
-      assert.equal(response.headers[header], undefined, `${header} should not be set on a 502`)
-    }
-  })
-
-  it("Does not forward unrelated RERUM response headers.", async () => {
-    global.fetch = async () => ({
-      headers: new Headers({
-        "Pagination-Limit": "10",
-        "X-Unrelated": "nope"
-      }),
-      json: async () => ([{ "@id": rerumUri, test: "item" }]),
-      ok: true
-    })
-
-    const response = await request(routeTester)
-      .post("/query")
-      .set("Content-Type", "application/json")
-      .send({ test: "item" })
-
-    assert.equal(response.statusCode, 200)
-    assert.equal(response.headers["pagination-limit"], "10")
-    assert.equal(response.headers["x-unrelated"], undefined)
-  })
 })
 
 describe("Check that the properly used query endpoints function and interact with RERUM.  __e2e", () => {

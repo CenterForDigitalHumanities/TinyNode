@@ -3,6 +3,8 @@ import { httpError, verifyJsonContentType } from "../rest.js"
 import { fetchRerum } from "../rerum.js"
 const router = express.Router()
 
+const PAGINATION_HEADERS = ["Pagination-Limit", "Pagination-Skip", "Pagination-Limit-Max", "Pagination-Skip-Max"]
+
 /* POST a query to the thing. */
 router.post('/', verifyJsonContentType, async (req, res, next) => {
   const lim = req.query.limit ?? 10
@@ -36,6 +38,11 @@ router.post('/', verifyJsonContentType, async (req, res, next) => {
     const queryURL = `${process.env.RERUM_API_ADDR}query?limit=${lim}&skip=${skip}`
     const rerumResponse = await fetchRerum(queryURL, queryOptions)
     .then(async (resp) => {
+      // Set before branching so the headers survive on the 502 error path as well
+      for (const header of PAGINATION_HEADERS) {
+        const value = resp.headers.get(header)
+        if (value !== null) res.set(header, value)
+      }
       if (resp.ok) return resp.json()
       // The response from RERUM indicates a failure, likely with a specific code and textual body
       let rerumErrorMessage

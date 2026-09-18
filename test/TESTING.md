@@ -53,6 +53,41 @@ This catches breaking changes like:
 - ✅ Wrong HTTP methods
 - ✅ Incorrect Content-Type headers
 
+### Token Passthrough Behavior
+
+Requests may carry a caller's own `Authorization` header, which replaces the instance token upstream (Passthrough Token Mode, see README). Tests validate:
+
+1. **Upstream contract** — The caller's header value reaches RERUM verbatim, including non-Bearer schemes
+2. **Fallback** — Without a header, the instance's `Bearer ${ACCESS_TOKEN}` is used, as before
+3. **Kill switch** — With `ALLOW_PASSTHROUGH_TOKENS=false`, a caller-supplied header is rejected with `403` and no upstream call is made; headerless requests still work
+4. **Refresh cycle** — `checkAccessToken` skips the instance token refresh for passthrough requests, so a failed refresh cannot break a request that does not use the instance token
+5. **Error fidelity** — Upstream `401`/`403` pass through with their real status codes so callers can debug their own tokens; every other upstream failure still maps to `502`
+
+Example from create.test.js:
+```javascript
+// Caller token reaches upstream verbatim
+await request(routeTester)
+  .post("/create")
+  .set("Authorization", "Bearer caller-m2m-token")
+
+assert.equal(lastFetchOptions.headers["Authorization"], "Bearer caller-m2m-token")
+
+// Passthrough disabled means 403, not silent misattribution
+process.env.ALLOW_PASSTHROUGH_TOKENS = "false"
+const response = await request(routeTester)
+  .post("/create")
+  .set("Authorization", "Bearer caller-m2m-token")
+
+assert.equal(response.statusCode, 403)
+assert.equal(lastFetchUrl, null, "upstream fetch must not happen when passthrough is rejected")
+```
+
+This prevents accidental changes to:
+
+- ✅ Verbatim header forwarding (no scheme rewriting, no local validation)
+- ✅ The 403 rejection path when passthrough is disabled
+- ✅ 401/403 status fidelity versus the catch-all 502
+
 ### If-Overwritten-Version Header Behavior
 
 The overwrite route includes special handling for version conflict resolution via the `If-Overwritten-Version` header. Tests validate:

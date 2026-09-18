@@ -1,12 +1,13 @@
 import express from "express"
 import { httpError, verifyJsonContentType } from "../rest.js"
 import { fetchRerum } from "../rerum.js"
+import { requirePassthroughAllowed, resolveAuthorization } from "./helpers/passthrough.js"
 const router = express.Router()
 
 const PAGINATION_HEADERS = ["Pagination-Limit", "Pagination-Skip", "Pagination-Limit-Max", "Pagination-Skip-Max"]
 
 /* POST a query to the thing. */
-router.post('/', verifyJsonContentType, async (req, res, next) => {
+router.post('/', verifyJsonContentType, requirePassthroughAllowed, async (req, res, next) => {
   const lim = req.query.limit ?? 10
   const skip = req.query.skip ?? 0
 
@@ -31,7 +32,7 @@ router.post('/', verifyJsonContentType, async (req, res, next) => {
       headers: {
         'user-agent': 'Tiny-Things/1.0',
         'Origin': process.env.ORIGIN,
-        'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`, // not required for query
+        'Authorization': resolveAuthorization(req), // not required for query
         'Content-Type' : "application/json;charset=utf-8"
       }
     }
@@ -44,6 +45,17 @@ router.post('/', verifyJsonContentType, async (req, res, next) => {
         if (value !== null) res.set(header, value)
       }
       if (resp.ok) return resp.json()
+      // Pass through 401/403 so callers see RERUM's rejection of their own
+      // token instead of a misleading 502.
+      if (resp.status === 401 || resp.status === 403) {
+        let rerumAuthMessage
+        try {
+          rerumAuthMessage = `${resp.status}: ${queryURL} - ${await resp.text()}`
+        } catch (e) {
+          rerumAuthMessage = `${resp.status}: ${queryURL} - A RERUM error occurred`
+        }
+        throw httpError(rerumAuthMessage, resp.status)
+      }
       // The response from RERUM indicates a failure, likely with a specific code and textual body
       let rerumErrorMessage
       try {

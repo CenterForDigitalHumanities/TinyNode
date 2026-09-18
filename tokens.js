@@ -2,6 +2,7 @@ import dotenv from "dotenv"
 dotenv.config()
 import fs from "node:fs/promises"
 import { parse, stringify } from "envfile"
+import { isPassthroughRequest } from "./routes/helpers/passthrough.js"
 
 const sourcePath = '.env'
 
@@ -68,6 +69,13 @@ async function generateNewAccessToken() {
  */
 async function checkAccessToken(req, res, next) {
     try {
+        // Passthrough requests carry the caller's own token upstream, so the
+        // instance token is not in play.  Skip its refresh cycle entirely;
+        // a failed refresh must not fail a request that does not use it.
+        if (isPassthroughRequest(req)) {
+            next()
+            return
+        }
         // If the instance of TinyNode is not registered and does not have a token then there is nothing to check.
         // Move on through the middleware.  RERUM will tell you what you did wrong.
         if(!process?.env?.ACCESS_TOKEN) {

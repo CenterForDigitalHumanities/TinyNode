@@ -82,6 +82,26 @@ OPEN_API_CORS = true
 
 **Note:** If you leave `index.html` in the app code it is possible that users will be able to navigate to this page and experience a front end.  This is either a bug or a feature...if you don't want users to end up in a front end then remove or rename the `index.html` file.  
 
+### Passthrough Token Mode
+A registered application can make machine-to-machine calls through a running TinyNode without cloning the whole thing.  Send your own registered access token in the `Authorization` header of any `/create`, `/update`, `/overwrite`, `/delete`, or `/query` request:
+
+```shell
+curl -X POST https://tiny.rerum.io/create \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"@type": "oa:Annotation", "body": "…"}'
+```
+
+Your token is forwarded to RERUM verbatim, so the write is attributed to your registered agent instead of the TinyNode instance's agent.  TinyNode does not validate the token; RERUM rejects it with a `401` if it is bad or expired, and that response is passed back to you unchanged.  Any error other than `401`/`403` is reported as a `502` from TinyNode.
+
+This mode is on by default.  An operator who wants the instance to write only with its own identity can disable it in `.env`:
+
+```shell
+ALLOW_PASSTHROUGH_TOKENS = false
+```
+
+When disabled, a request that carries an `Authorization` header is rejected with `403` rather than silently attributing the write to the instance's agent.  Requests without the header are unaffected and keep using the instance's identity.
+
 # 🌟👍 Contributors 👍🌟
 Trying to contribute to the public TinyThings?  No way, that's awesome.  Read the [Contributors Guide](CONTRIBUTING.md)!
 

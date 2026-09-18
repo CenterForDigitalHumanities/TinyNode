@@ -20,6 +20,26 @@ describe("Shared OpenAPI artifact sync scaffolding.", () => {
     assert.match(artifact, /^\s+schemas:/m, "artifact must define components.schemas")
   })
 
+  it("the canonical shared artifact exposes the bearer passthrough security scheme.  __exists __core", () => {
+    const artifact = fs.readFileSync(artifactPath, "utf8")
+    assert.match(artifact, /^\s+securitySchemes:/m, "artifact must define components.securitySchemes")
+    assert.match(
+      artifact,
+      /^    bearerAuth:/m,
+      "artifact must define the bearerAuth security scheme named by TinyNode's passthrough mode"
+    )
+    assert.match(
+      artifact,
+      /bearerAuth:\s*\n\s+type: http\s*\n\s+scheme: bearer/,
+      "bearerAuth must be an HTTP bearer scheme so consumers can send caller tokens via the Authorization header"
+    )
+    assert.match(
+      artifact,
+      /ALLOW_PASSTHROUGH_TOKENS/,
+      "bearerAuth description must mention the operator kill switch"
+    )
+  })
+
   it("the sync workflow targets the correct receiver repo and paths.  __exists __core", () => {
     const workflow = fs.readFileSync(workflowPath, "utf8")
     assert.match(workflow, /repository:\s*cubap\/rerum_openapi/, "workflow must check out cubap/rerum_openapi as the receiver")

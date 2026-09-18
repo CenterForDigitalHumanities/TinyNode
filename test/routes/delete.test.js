@@ -169,3 +169,65 @@ describe("Delete network failure and passthrough behavior.  __rest __core", () =
     assert.match(response.text, /A RERUM error occurred/)
   })
 })
+
+describe("Check that the delete route passes caller tokens through to RERUM.  __mock_functions __core", () => {
+  it("Sends the caller's Authorization header upstream verbatim for body delete.", async () => {
+    const response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "Bearer caller-m2m-token")
+      .send({ "@id": rerumUri })
+
+    assert.equal(response.statusCode, 204)
+    assert.equal(lastFetchOptions.headers["Authorization"], "Bearer caller-m2m-token")
+  })
+
+  it("Sends the caller's Authorization header upstream verbatim for path delete.", async () => {
+    const response = await request(routeTester)
+      .delete("/delete/00000")
+      .set("Authorization", "Bearer caller-m2m-token")
+
+    assert.equal(response.statusCode, 204)
+    assert.equal(lastFetchOptions.headers["Authorization"], "Bearer caller-m2m-token")
+  })
+
+  it("Rejects caller tokens with 403 when passthrough is disabled, for both delete forms.", async () => {
+    process.env.ALLOW_PASSTHROUGH_TOKENS = "false"
+    try {
+      let response = await request(routeTester)
+        .delete("/delete")
+        .set("Content-Type", "application/json")
+        .set("Authorization", "Bearer caller-m2m-token")
+        .send({ "@id": rerumUri })
+
+      assert.equal(response.statusCode, 403)
+      assert.equal(lastFetchUrl, null, "upstream fetch must not happen when passthrough is rejected")
+      assert.match(response.text, /passthrough is not allowed/i)
+
+      response = await request(routeTester)
+        .delete("/delete/00000")
+        .set("Authorization", "Bearer caller-m2m-token")
+
+      assert.equal(response.statusCode, 403)
+      assert.equal(lastFetchUrl, null, "upstream fetch must not happen when passthrough is rejected")
+    }
+    finally {
+      delete process.env.ALLOW_PASSTHROUGH_TOKENS
+    }
+  })
+
+  it("Passes an upstream 401 through with the real status code for path delete.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized: bad or expired access token"
+    })
+
+    const response = await request(routeTester)
+      .delete("/delete/00000")
+      .set("Authorization", "Bearer caller-m2m-token")
+
+    assert.equal(response.statusCode, 401)
+    assert.match(response.text, /Unauthorized/)
+  })
+})

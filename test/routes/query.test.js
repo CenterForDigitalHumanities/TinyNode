@@ -75,24 +75,6 @@ describe("Check that the request/response behavior of the TinyNode query route f
     assert.equal(lastFetchOptions.headers["Authorization"], "Bearer caller-m2m-token")
   })
 
-  it("Rejects caller tokens with 403 when passthrough is disabled.", async () => {
-    process.env.ALLOW_PASSTHROUGH_TOKENS = "false"
-    try {
-      const response = await request(routeTester)
-        .post("/query")
-        .set("Content-Type", "application/json")
-        .set("Authorization", "Bearer caller-m2m-token")
-        .send({ test: "item" })
-
-      assert.equal(response.statusCode, 403)
-      assert.equal(lastFetchUrl, null, "upstream fetch must not happen when passthrough is rejected")
-      assert.match(response.text, /passthrough is not allowed/i)
-    }
-    finally {
-      delete process.env.ALLOW_PASSTHROUGH_TOKENS
-    }
-  })
-
   it("Passes an upstream 401 through with the real status code.", async () => {
     global.fetch = async () => ({
       headers: new Headers(),

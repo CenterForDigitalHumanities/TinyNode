@@ -1,13 +1,13 @@
 import express from "express"
 import { httpError, verifyJsonContentType } from "../rest.js"
 import { fetchRerum } from "../rerum.js"
-import { requirePassthroughAllowed, resolveAuthorization } from "./helpers/passthrough.js"
+import { resolveAuthorization } from "./helpers/passthrough.js"
 const router = express.Router()
 
 const PAGINATION_HEADERS = ["Pagination-Limit", "Pagination-Skip", "Pagination-Limit-Max", "Pagination-Skip-Max"]
 
 /* POST a query to the thing. */
-router.post('/', verifyJsonContentType, requirePassthroughAllowed, async (req, res, next) => {
+router.post('/', verifyJsonContentType, async (req, res, next) => {
   const lim = req.query.limit ?? 10
   const skip = req.query.skip ?? 0
 

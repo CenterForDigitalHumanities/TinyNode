@@ -215,19 +215,4 @@ describe("Check that the delete route passes caller tokens through to RERUM.  __
       delete process.env.ALLOW_PASSTHROUGH_TOKENS
     }
   })
-
-  it("Passes an upstream 401 through with the real status code for path delete.", async () => {
-    global.fetch = async () => ({
-      ok: false,
-      status: 401,
-      text: async () => "Unauthorized: bad or expired access token"
-    })
-
-    const response = await request(routeTester)
-      .delete("/delete/00000")
-      .set("Authorization", "Bearer caller-m2m-token")
-
-    assert.equal(response.statusCode, 401)
-    assert.match(response.text, /Unauthorized/)
-  })
 })

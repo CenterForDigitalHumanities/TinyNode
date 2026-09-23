@@ -61,7 +61,7 @@ Requests may carry a caller's own `Authorization` header, which replaces the ins
 2. **Fallback** — Without a header, the instance's `Bearer ${ACCESS_TOKEN}` is used, as before
 3. **Kill switch** — With `ALLOW_PASSTHROUGH_TOKENS=false`, a caller-supplied header is rejected with `403` and no upstream call is made; headerless requests still work
 4. **Refresh cycle** — `checkAccessToken` skips the instance token refresh for passthrough requests, so a failed refresh cannot break a request that does not use the instance token
-5. **Error fidelity** — Upstream `401`/`403` pass through with their real status codes so callers can debug their own tokens; every other upstream failure still maps to `502`
+5. **Error contract** — Upstream `401`/`403` are reported as TinyNode `502` responses whose bodies start with `401:` or `403:` and include RERUM's message, preserving TinyNode's existing error contract. The only deliberate exception is `/overwrite`, which still returns `409` for version conflicts.
 
 Example from create.test.js:
 ```javascript
@@ -86,7 +86,7 @@ This prevents accidental changes to:
 
 - ✅ Verbatim header forwarding (no scheme rewriting, no local validation)
 - ✅ The 403 rejection path when passthrough is disabled
-- ✅ 401/403 status fidelity versus the catch-all 502
+- ✅ 401/403 mapped to 502 with RERUM's status and message in the body, versus the catch-all 502 for other upstream failures
 
 ### If-Overwritten-Version Header Behavior
 

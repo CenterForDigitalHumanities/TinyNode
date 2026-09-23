@@ -1,6 +1,6 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
-import { httpError, verifyJsonContentType } from "../rest.js"
+import { verifyJsonContentType } from "../rest.js"
 import { createRerumNetworkError, fetchRerum } from "../rerum.js"
 import { requirePassthroughAllowed, resolveAuthorization } from "./helpers/passthrough.js"
 const router = express.Router()
@@ -30,18 +30,6 @@ router.post('/', verifyJsonContentType, requirePassthroughAllowed, checkAccessTo
     const rerumResponse = await fetchRerum(createURL, createOptions)
     .then(async (resp) => {
       if (resp.ok) return resp.json()
-      // Pass through 401/403 so callers can see RERUM's rejection of their
-      // own token rather than a misleading 502.  Everything else is a bad
-      // gateway from TinyNode's point of view.
-      if (resp.status === 401 || resp.status === 403) {
-        let rerumAuthMessage
-        try {
-          rerumAuthMessage = `${resp.status}: ${createURL} - ${await resp.text()}`
-        } catch (e) {
-          rerumAuthMessage = `${resp.status}: ${createURL} - A RERUM error occurred`
-        }
-        throw httpError(rerumAuthMessage, resp.status)
-      }
       // The response from RERUM indicates a failure, likely with a specific code and textual body
       let rerumErrorMessage
       try {

@@ -92,7 +92,7 @@ curl -X POST https://tiny.rerum.io/create \
   -d '{"@type": "oa:Annotation", "body": "…"}'
 ```
 
-Your token is forwarded to RERUM verbatim, so the write is attributed to your registered agent instead of the TinyNode instance's agent.  TinyNode does not validate the token; RERUM rejects it with a `401` if it is bad or expired, and that response is passed back to you unchanged.  Any error other than `401`/`403` is reported as a `502` from TinyNode.
+Your token is forwarded to RERUM verbatim, so the write is attributed to your registered agent instead of the TinyNode instance's agent.  TinyNode does not validate the token; RERUM rejects it with a `401` if it is bad or expired.  That rejection is reported as a `502` from TinyNode whose body starts with `401:` and includes RERUM's message, the same as any other upstream RERUM error.  The only deliberate exception is `/overwrite`, which still returns `409` for version conflicts.
 
 This mode is on by default.  An operator who wants the instance to write only with its own identity can disable it in `.env`:
 

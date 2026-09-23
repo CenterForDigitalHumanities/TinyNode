@@ -243,40 +243,42 @@ describe("Check that the create route passes caller tokens through to RERUM.  __
     }
   })
 
-  it("Passes an upstream 401 through with the real status code.", async () => {
+  it("Maps upstream 401/403 to 502 while preserving RERUM's message.", async () => {
     global.fetch = async () => ({
       ok: false,
       status: 401,
       text: async () => "Unauthorized: bad or expired access token"
     })
 
-    const response = await request(routeTester)
+    let response = await request(routeTester)
       .post("/create")
       .set("Content-Type", "application/json")
-      .set("Authorization", "Bearer caller-m2m-token")
+      .set("Authorization", "******")
       .send({ test: "item" })
 
-    assert.equal(response.statusCode, 401)
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^401:/)
     assert.match(response.text, /Unauthorized/)
-  })
 
-  it("Passes an upstream 403 through with the real status code.", async () => {
     global.fetch = async () => ({
       ok: false,
       status: 403,
       text: async () => "Forbidden"
     })
 
-    const response = await request(routeTester)
+    response = await request(routeTester)
       .post("/create")
       .set("Content-Type", "application/json")
-      .set("Authorization", "Bearer caller-m2m-token")
+      .set("Authorization", "******")
       .send({ test: "item" })
 
-    assert.equal(response.statusCode, 403)
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^403:/)
     assert.match(response.text, /Forbidden/)
   })
+})
 
+describe('Keeps 502 for other upstream failures so passthrough errors stay distinguishable.', () => {
   it("Keeps 502 for other upstream failures so passthrough errors stay distinguishable.", async () => {
     global.fetch = async () => ({
       ok: false,

@@ -51,17 +51,6 @@ router.put('/', verifyJsonContentType, requirePassthroughAllowed, checkAccessTok
         err.body = conflictBody
         throw err
       }
-      // Pass through 401/403 so callers see RERUM's rejection of their own
-      // token instead of a misleading 502.
-      if (resp.status === 401 || resp.status === 403) {
-        let rerumAuthMessage
-        try {
-          rerumAuthMessage = `${resp.status}: ${overwriteURL} - ${await resp.text()}`
-        } catch (e) {
-          rerumAuthMessage = `${resp.status}: ${overwriteURL} - A RERUM error occurred`
-        }
-        throw httpError(rerumAuthMessage, resp.status)
-      }
       // The response from RERUM indicates a failure, likely with a specific code and textual body
       let rerumErrorMessage
       try {

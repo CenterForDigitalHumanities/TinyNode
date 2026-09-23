@@ -1,6 +1,6 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
-import { httpError, verifyJsonContentType } from "../rest.js"
+import { verifyJsonContentType } from "../rest.js"
 import { fetchRerum } from "../rerum.js"
 import { requirePassthroughAllowed, resolveAuthorization } from "./helpers/passthrough.js"
 const router = express.Router()
@@ -29,17 +29,6 @@ router.delete('/', verifyJsonContentType, requirePassthroughAllowed, checkAccess
     await fetchRerum(deleteURL, deleteOptions)
     .then(async (resp) => {
       if (resp.ok) return
-      // Pass through 401/403 so callers see RERUM's rejection of their own
-      // token instead of a misleading 502.
-      if (resp.status === 401 || resp.status === 403) {
-        let rerumAuthMessage
-        try {
-          rerumAuthMessage = `${resp.status}: ${deleteURL} - ${await resp.text()}`
-        } catch (e) {
-          rerumAuthMessage = `${resp.status}: ${deleteURL} - A RERUM error occurred`
-        }
-        throw httpError(rerumAuthMessage, resp.status)
-      }
       let rerumErrorMessage
       try {
         rerumErrorMessage = `${resp.status ?? 500}: ${deleteURL} - ${await resp.text()}`
@@ -74,17 +63,6 @@ router.delete('/:id', requirePassthroughAllowed, checkAccessToken, async (req, r
     await fetchRerum(deleteURL, deleteOptions)
     .then(async (resp) => {
       if (resp.ok) return
-      // Pass through 401/403 so callers see RERUM's rejection of their own
-      // token instead of a misleading 502.
-      if (resp.status === 401 || resp.status === 403) {
-        let rerumAuthMessage
-        try {
-          rerumAuthMessage = `${resp.status}: ${deleteURL} - ${await resp.text()}`
-        } catch (e) {
-          rerumAuthMessage = `${resp.status}: ${deleteURL} - A RERUM error occurred`
-        }
-        throw httpError(rerumAuthMessage, resp.status)
-      }
       // The response from RERUM indicates a failure, likely with a specific code and textual body
       let rerumErrorMessage
       try {

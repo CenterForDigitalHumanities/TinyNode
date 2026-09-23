@@ -215,4 +215,100 @@ describe("Check that the delete route passes caller tokens through to RERUM.  __
       delete process.env.ALLOW_PASSTHROUGH_TOKENS
     }
   })
+
+  it("Passes upstream 401/403 through with real status for passthrough requests, for both delete forms.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized: bad or expired access token"
+    })
+
+    let response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "******")
+      .send({ "@id": rerumUri })
+
+    assert.equal(response.statusCode, 401)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    response = await request(routeTester)
+      .delete("/delete/00000")
+      .set("Authorization", "******")
+
+    assert.equal(response.statusCode, 401)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    global.fetch = async () => ({
+      ok: false,
+      status: 403,
+      text: async () => "Forbidden"
+    })
+
+    response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "******")
+      .send({ "@id": rerumUri })
+
+    assert.equal(response.statusCode, 403)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+
+    response = await request(routeTester)
+      .delete("/delete/00000")
+      .set("Authorization", "******")
+
+    assert.equal(response.statusCode, 403)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+  })
+
+  it("Maps upstream 401/403 to 502 for instance-token requests, for both delete forms.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized: bad or expired access token"
+    })
+
+    let response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumUri })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    response = await request(routeTester)
+      .delete("/delete/00000")
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    global.fetch = async () => ({
+      ok: false,
+      status: 403,
+      text: async () => "Forbidden"
+    })
+
+    response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumUri })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+
+    response = await request(routeTester)
+      .delete("/delete/00000")
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+  })
 })

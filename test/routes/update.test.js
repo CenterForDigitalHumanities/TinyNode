@@ -197,7 +197,7 @@ describe("Check that the update route passes caller tokens through to RERUM.  __
     }
   })
 
-  it("Maps upstream 401/403 to 502 while preserving RERUM's message.", async () => {
+  it("Passes upstream 401/403 through with real status for passthrough requests.", async () => {
     global.fetch = async () => ({
       ok: false,
       status: 401,
@@ -208,6 +208,39 @@ describe("Check that the update route passes caller tokens through to RERUM.  __
       .put("/update")
       .set("Content-Type", "application/json")
       .set("Authorization", "******")
+      .send({ "@id": rerumUriOrig, testing: "item" })
+
+    assert.equal(response.statusCode, 401)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    global.fetch = async () => ({
+      ok: false,
+      status: 403,
+      text: async () => "Forbidden"
+    })
+
+    response = await request(routeTester)
+      .put("/update")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "******")
+      .send({ "@id": rerumUriOrig, testing: "item" })
+
+    assert.equal(response.statusCode, 403)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+  })
+
+  it("Maps upstream 401/403 to 502 for instance-token requests.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized: bad or expired access token"
+    })
+
+    let response = await request(routeTester)
+      .put("/update")
+      .set("Content-Type", "application/json")
       .send({ "@id": rerumUriOrig, testing: "item" })
 
     assert.equal(response.statusCode, 502)
@@ -223,7 +256,6 @@ describe("Check that the update route passes caller tokens through to RERUM.  __
     response = await request(routeTester)
       .put("/update")
       .set("Content-Type", "application/json")
-      .set("Authorization", "******")
       .send({ "@id": rerumUriOrig, testing: "item" })
 
     assert.equal(response.statusCode, 502)

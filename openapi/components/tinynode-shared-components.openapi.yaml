@@ -19,14 +19,17 @@ components:
       type: http
       scheme: bearer
       description: >-
-        Caller-supplied RERUM access token. When present, TinyNode forwards it
-        upstream verbatim and the write is attributed to the caller's
-        registered agent instead of the instance's agent. TinyNode does not
-        validate the token; RERUM rejects invalid tokens with 401, and TinyNode
-        reports that as a 502 whose body starts with "401:" and includes
-        RERUM's message, the same as any other upstream RERUM error. Operators
-        can reject passthrough with ALLOW_PASSTHROUGH_TOKENS=false, which
-        answers 403 for any request carrying this header.
+        Caller-supplied RERUM access token. When present on a modification
+        request, TinyNode forwards it upstream verbatim and the write is
+        attributed to the caller's registered agent instead of the instance's
+        agent. TinyNode does not validate the token; RERUM rejects invalid
+        tokens with 401, and that 401 (or 403) is passed back to the caller
+        with its real status code so the caller can debug their own token. For
+        requests without this header, RERUM's 401/403 is reported as a 502
+        whose body starts with "401:" or "403:" and includes RERUM's message,
+        the same as any other upstream RERUM error. Operators can reject
+        passthrough with ALLOW_PASSTHROUGH_TOKENS=false, which answers 403 for
+        any request carrying this header.
   schemas:
     HealthResponse:
       type: object

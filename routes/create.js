@@ -1,11 +1,12 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
-import { verifyJsonContentType } from "../rest.js"
+import { httpError, verifyJsonContentType } from "../rest.js"
 import { createRerumNetworkError, fetchRerum } from "../rerum.js"
+import { isPassthroughRequest, requirePassthroughAllowed, resolveAuthorization } from "./helpers/passthrough.js"
 const router = express.Router()
 
 /* POST a create to the thing. */
-router.post('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
+router.post('/', verifyJsonContentType, requirePassthroughAllowed, checkAccessToken, async (req, res, next) => {
 
   try {
     // if an id is passed in, pop off the end to make it an _id
@@ -21,7 +22,7 @@ router.post('/', verifyJsonContentType, checkAccessToken, async (req, res, next)
       headers: {
         'user-agent': 'Tiny-Things/1.0',
         'Origin': process.env.ORIGIN,
-        'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
+        'Authorization': resolveAuthorization(req),
         'Content-Type' : "application/json;charset=utf-8"
       }
     }
@@ -29,6 +30,17 @@ router.post('/', verifyJsonContentType, checkAccessToken, async (req, res, next)
     const rerumResponse = await fetchRerum(createURL, createOptions)
     .then(async (resp) => {
       if (resp.ok) return resp.json()
+      // For actual passthrough requests, let callers see RERUM's 401/403 directly
+      // so they can debug their own tokens.  Otherwise keep TinyNode's 502 contract.
+      if (isPassthroughRequest(req) && (resp.status === 401 || resp.status === 403)) {
+        let rerumAuthMessage
+        try {
+          rerumAuthMessage = `${resp.status}: ${createURL} - ${await resp.text()}`
+        } catch (e) {
+          rerumAuthMessage = `${resp.status}: ${createURL} - A RERUM error occurred`
+        }
+        throw httpError(rerumAuthMessage, resp.status)
+      }
       // The response from RERUM indicates a failure, likely with a specific code and textual body
       let rerumErrorMessage
       try {

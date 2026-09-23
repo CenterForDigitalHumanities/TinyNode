@@ -53,6 +53,41 @@ This catches breaking changes like:
 - ✅ Wrong HTTP methods
 - ✅ Incorrect Content-Type headers
 
+### Token Passthrough Behavior
+
+Requests may carry a caller's own `Authorization` header, which replaces the instance token upstream (Passthrough Token Mode, see README). Tests validate:
+
+1. **Upstream contract** — The caller's header value reaches RERUM verbatim, including non-Bearer schemes
+2. **Fallback** — Without a header, the instance's `Bearer ${ACCESS_TOKEN}` is used, as before
+3. **Kill switch** — With `ALLOW_PASSTHROUGH_TOKENS=false`, a caller-supplied header is rejected with `403` and no upstream call is made; headerless requests still work
+4. **Refresh cycle** — `checkAccessToken` skips the instance token refresh for passthrough requests, so a failed refresh cannot break a request that does not use the instance token
+5. **Error contract** — For modification routes (`/create`, `/update`, `/overwrite`, `/delete`), upstream `401`/`403` responses pass through with their real status codes when the request carried a caller-supplied `Authorization` header, so the caller can debug their own token. For headerless (instance-token) requests, upstream `401`/`403` are reported as TinyNode `502` responses whose bodies start with `401:` or `403:` and include RERUM's message, preserving TinyNode's existing error contract. The only deliberate exception is `/overwrite`, which still returns `409` for version conflicts.
+
+Example from create.test.js:
+```javascript
+// Caller token reaches upstream verbatim
+await request(routeTester)
+  .post("/create")
+  .set("Authorization", "Bearer caller-m2m-token")
+
+assert.equal(lastFetchOptions.headers["Authorization"], "Bearer caller-m2m-token")
+
+// Passthrough disabled means 403, not silent misattribution
+process.env.ALLOW_PASSTHROUGH_TOKENS = "false"
+const response = await request(routeTester)
+  .post("/create")
+  .set("Authorization", "Bearer caller-m2m-token")
+
+assert.equal(response.statusCode, 403)
+assert.equal(lastFetchUrl, null, "upstream fetch must not happen when passthrough is rejected")
+```
+
+This prevents accidental changes to:
+
+- ✅ Verbatim header forwarding (no scheme rewriting, no local validation)
+- ✅ The 403 rejection path when passthrough is disabled
+- ✅ Passthrough requests pass through 401/403 with their real status codes; instance-token requests map 401/403 to 502 with RERUM's status and message in the body
+
 ### If-Overwritten-Version Header Behavior
 
 The overwrite route includes special handling for version conflict resolution via the `If-Overwritten-Version` header. Tests validate:

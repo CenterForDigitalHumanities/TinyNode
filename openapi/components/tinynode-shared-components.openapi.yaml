@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: TinyNode Shared Components
-  version: 0.1.0-alpha.1
+  version: 0.2.0-alpha.1
   description: >-
     Shared schema components reused by multiple TinyNode seams. TinyNode route
     handlers are sourced from CenterForDigitalHumanities/TinyNode routes/
@@ -14,6 +14,22 @@ x-upstream-provider:
   name: rerum_server_nodejs
   baseUrl: https://store.rerum.io/v1
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >-
+        Caller-supplied RERUM access token. When present on a modification
+        request, TinyNode forwards it upstream verbatim and the write is
+        attributed to the caller's registered agent instead of the instance's
+        agent. TinyNode does not validate the token; RERUM rejects invalid
+        tokens with 401, and that 401 (or 403) is passed back to the caller
+        with its real status code so the caller can debug their own token. For
+        requests without this header, RERUM's 401/403 is reported as a 502
+        whose body starts with "401:" or "403:" and includes RERUM's message,
+        the same as any other upstream RERUM error. Operators can reject
+        passthrough with ALLOW_PASSTHROUGH_TOKENS=false, which answers 403 for
+        any request carrying this header.
   schemas:
     HealthResponse:
       type: object

@@ -121,6 +121,103 @@ describe("Overwrite conflict and header contract behavior.  __rest __core", () =
     assert.equal(response.statusCode, 409)
     assert.equal(response.body.message, "Version conflict")
   })
+
+  it("Passes upstream 401/403 through with real status for passthrough requests.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized: bad or expired access token"
+    })
+
+    let response = await request(routeTester)
+      .put("/overwrite")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "******")
+      .send({ "@id": rerumTinyTestObjId, testing: "item" })
+
+    assert.equal(response.statusCode, 401)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    global.fetch = async () => ({
+      ok: false,
+      status: 403,
+      text: async () => "Forbidden"
+    })
+
+    response = await request(routeTester)
+      .put("/overwrite")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "******")
+      .send({ "@id": rerumTinyTestObjId, testing: "item" })
+
+    assert.equal(response.statusCode, 403)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+  })
+
+  it("Maps upstream 401/403 to 502 for instance-token requests.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized: bad or expired access token"
+    })
+
+    let response = await request(routeTester)
+      .put("/overwrite")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumTinyTestObjId, testing: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    global.fetch = async () => ({
+      ok: false,
+      status: 403,
+      text: async () => "Forbidden"
+    })
+
+    response = await request(routeTester)
+      .put("/overwrite")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumTinyTestObjId, testing: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+  })
+})
+
+describe("Check that the overwrite route passes caller tokens through to RERUM.  __mock_functions __core", () => {
+  it("Sends the caller's Authorization header upstream verbatim.", async () => {
+    const response = await request(routeTester)
+      .put("/overwrite")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "Bearer caller-m2m-token")
+      .send({ "@id": rerumTinyTestObjId, testing: "item" })
+
+    assert.equal(response.statusCode, 200)
+    assert.equal(lastFetchOptions.headers["Authorization"], "Bearer caller-m2m-token")
+  })
+
+  it("Rejects caller tokens with 403 when passthrough is disabled.", async () => {
+    process.env.ALLOW_PASSTHROUGH_TOKENS = "false"
+    try {
+      const response = await request(routeTester)
+        .put("/overwrite")
+        .set("Content-Type", "application/json")
+        .set("Authorization", "Bearer caller-m2m-token")
+        .send({ "@id": rerumTinyTestObjId, testing: "item" })
+
+      assert.equal(response.statusCode, 403)
+      assert.equal(lastFetchUrl, null, "upstream fetch must not happen when passthrough is rejected")
+      assert.match(response.text, /passthrough is not allowed/i)
+    }
+    finally {
+      delete process.env.ALLOW_PASSTHROUGH_TOKENS
+    }
+  })
 })
 
 describe("Overwrite If-Overwritten-Version header behavior.  __mock_functions", () => {

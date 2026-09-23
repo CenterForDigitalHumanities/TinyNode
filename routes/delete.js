@@ -1,11 +1,12 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
-import { verifyJsonContentType } from "../rest.js"
+import { httpError, verifyJsonContentType } from "../rest.js"
 import { fetchRerum } from "../rerum.js"
+import { isPassthroughRequest, requirePassthroughAllowed, resolveAuthorization } from "./helpers/passthrough.js"
 const router = express.Router()
 
 /* Legacy delete pattern w/body. */
-router.delete('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
+router.delete('/', verifyJsonContentType, requirePassthroughAllowed, checkAccessToken, async (req, res, next) => {
   try {
     if (!req?.body || !(req.body['@id'] ?? req.body.id)) {
       const err = new Error("No record id to delete! (https://store.rerum.io/v1/API.html#delete)")
@@ -20,7 +21,7 @@ router.delete('/', verifyJsonContentType, checkAccessToken, async (req, res, nex
       headers: {
         'user-agent': 'Tiny-Things/1.0',
         'Origin': process.env.ORIGIN,
-        'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
+        'Authorization': resolveAuthorization(req),
         'Content-Type' : "application/json; charset=utf-8"
       }
     }
@@ -28,6 +29,17 @@ router.delete('/', verifyJsonContentType, checkAccessToken, async (req, res, nex
     await fetchRerum(deleteURL, deleteOptions)
     .then(async (resp) => {
       if (resp.ok) return
+      // For actual passthrough requests, let callers see RERUM's 401/403 directly
+      // so they can debug their own tokens.  Otherwise keep TinyNode's 502 contract.
+      if (isPassthroughRequest(req) && (resp.status === 401 || resp.status === 403)) {
+        let rerumAuthMessage
+        try {
+          rerumAuthMessage = `${resp.status}: ${deleteURL} - ${await resp.text()}`
+        } catch (e) {
+          rerumAuthMessage = `${resp.status}: ${deleteURL} - A RERUM error occurred`
+        }
+        throw httpError(rerumAuthMessage, resp.status)
+      }
       let rerumErrorMessage
       try {
         rerumErrorMessage = `${resp.status ?? 500}: ${deleteURL} - ${await resp.text()}`
@@ -47,7 +59,7 @@ router.delete('/', verifyJsonContentType, checkAccessToken, async (req, res, nex
 })
 
 /* DELETE an object by ID via the RERUM API. */
-router.delete('/:id', checkAccessToken, async (req, res, next) => {
+router.delete('/:id', requirePassthroughAllowed, checkAccessToken, async (req, res, next) => {
   try {
   
     const deleteURL = `${process.env.RERUM_API_ADDR}delete/${req.params.id}`
@@ -56,12 +68,23 @@ router.delete('/:id', checkAccessToken, async (req, res, next) => {
       headers: {
         'user-agent': 'Tiny-Things/1.0',
         'Origin': process.env.ORIGIN,
-        'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
+        'Authorization': resolveAuthorization(req),
       }
     }
     await fetchRerum(deleteURL, deleteOptions)
     .then(async (resp) => {
       if (resp.ok) return
+      // For actual passthrough requests, let callers see RERUM's 401/403 directly
+      // so they can debug their own tokens.  Otherwise keep TinyNode's 502 contract.
+      if (isPassthroughRequest(req) && (resp.status === 401 || resp.status === 403)) {
+        let rerumAuthMessage
+        try {
+          rerumAuthMessage = `${resp.status}: ${deleteURL} - ${await resp.text()}`
+        } catch (e) {
+          rerumAuthMessage = `${resp.status}: ${deleteURL} - A RERUM error occurred`
+        }
+        throw httpError(rerumAuthMessage, resp.status)
+      }
       // The response from RERUM indicates a failure, likely with a specific code and textual body
       let rerumErrorMessage
       try {

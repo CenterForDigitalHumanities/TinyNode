@@ -2,10 +2,11 @@ import express from "express"
 import checkAccessToken from "../tokens.js"
 import { httpError, verifyJsonContentType } from "../rest.js"
 import { createRerumNetworkError, fetchRerum } from "../rerum.js"
+import { isPassthroughRequest, requirePassthroughAllowed, resolveAuthorization } from "./helpers/passthrough.js"
 const router = express.Router()
 
 /* PUT an update to the thing. */
-router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
+router.put('/', verifyJsonContentType, requirePassthroughAllowed, checkAccessToken, async (req, res, next) => {
 
   try {
     // check for @id; any value is valid
@@ -20,7 +21,7 @@ router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) 
       headers: {
         'user-agent': 'Tiny-Things/1.0',
         'Origin': process.env.ORIGIN,
-        'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`,
+        'Authorization': resolveAuthorization(req),
         'Content-Type' : "application/json;charset=utf-8"
       }
     }
@@ -28,6 +29,17 @@ router.put('/', verifyJsonContentType, checkAccessToken, async (req, res, next) 
     const rerumResponse = await fetchRerum(updateURL, updateOptions)
     .then(async (resp) => {
       if (resp.ok) return resp.json()
+      // For actual passthrough requests, let callers see RERUM's 401/403 directly
+      // so they can debug their own tokens.  Otherwise keep TinyNode's 502 contract.
+      if (isPassthroughRequest(req) && (resp.status === 401 || resp.status === 403)) {
+        let rerumAuthMessage
+        try {
+          rerumAuthMessage = `${resp.status}: ${updateURL} - ${await resp.text()}`
+        } catch (e) {
+          rerumAuthMessage = `${resp.status}: ${updateURL} - A RERUM error occurred`
+        }
+        throw httpError(rerumAuthMessage, resp.status)
+      }
       // The response from RERUM indicates a failure, likely with a specific code and textual body
       let rerumErrorMessage
       try {

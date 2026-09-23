@@ -169,3 +169,146 @@ describe("Delete network failure and passthrough behavior.  __rest __core", () =
     assert.match(response.text, /A RERUM error occurred/)
   })
 })
+
+describe("Check that the delete route passes caller tokens through to RERUM.  __mock_functions __core", () => {
+  it("Sends the caller's Authorization header upstream verbatim for body delete.", async () => {
+    const response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "Bearer caller-m2m-token")
+      .send({ "@id": rerumUri })
+
+    assert.equal(response.statusCode, 204)
+    assert.equal(lastFetchOptions.headers["Authorization"], "Bearer caller-m2m-token")
+  })
+
+  it("Sends the caller's Authorization header upstream verbatim for path delete.", async () => {
+    const response = await request(routeTester)
+      .delete("/delete/00000")
+      .set("Authorization", "Bearer caller-m2m-token")
+
+    assert.equal(response.statusCode, 204)
+    assert.equal(lastFetchOptions.headers["Authorization"], "Bearer caller-m2m-token")
+  })
+
+  it("Rejects caller tokens with 403 when passthrough is disabled, for both delete forms.", async () => {
+    process.env.ALLOW_PASSTHROUGH_TOKENS = "false"
+    try {
+      let response = await request(routeTester)
+        .delete("/delete")
+        .set("Content-Type", "application/json")
+        .set("Authorization", "Bearer caller-m2m-token")
+        .send({ "@id": rerumUri })
+
+      assert.equal(response.statusCode, 403)
+      assert.equal(lastFetchUrl, null, "upstream fetch must not happen when passthrough is rejected")
+      assert.match(response.text, /passthrough is not allowed/i)
+
+      response = await request(routeTester)
+        .delete("/delete/00000")
+        .set("Authorization", "Bearer caller-m2m-token")
+
+      assert.equal(response.statusCode, 403)
+      assert.equal(lastFetchUrl, null, "upstream fetch must not happen when passthrough is rejected")
+    }
+    finally {
+      delete process.env.ALLOW_PASSTHROUGH_TOKENS
+    }
+  })
+
+  it("Passes upstream 401/403 through with real status for passthrough requests, for both delete forms.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized: bad or expired access token"
+    })
+
+    let response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "******")
+      .send({ "@id": rerumUri })
+
+    assert.equal(response.statusCode, 401)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    response = await request(routeTester)
+      .delete("/delete/00000")
+      .set("Authorization", "******")
+
+    assert.equal(response.statusCode, 401)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    global.fetch = async () => ({
+      ok: false,
+      status: 403,
+      text: async () => "Forbidden"
+    })
+
+    response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "******")
+      .send({ "@id": rerumUri })
+
+    assert.equal(response.statusCode, 403)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+
+    response = await request(routeTester)
+      .delete("/delete/00000")
+      .set("Authorization", "******")
+
+    assert.equal(response.statusCode, 403)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+  })
+
+  it("Maps upstream 401/403 to 502 for instance-token requests, for both delete forms.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized: bad or expired access token"
+    })
+
+    let response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumUri })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    response = await request(routeTester)
+      .delete("/delete/00000")
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    global.fetch = async () => ({
+      ok: false,
+      status: 403,
+      text: async () => "Forbidden"
+    })
+
+    response = await request(routeTester)
+      .delete("/delete")
+      .set("Content-Type", "application/json")
+      .send({ "@id": rerumUri })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+
+    response = await request(routeTester)
+      .delete("/delete/00000")
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+  })
+})

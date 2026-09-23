@@ -186,6 +186,149 @@ describe("Check that TinyNode create route propagates upstream and network error
   })
 })
 
+describe("Check that the create route passes caller tokens through to RERUM.  __mock_functions __core", () => {
+  it("Sends the caller's Authorization header upstream verbatim.", async () => {
+    const response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "Bearer caller-m2m-token")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 201)
+    assert.equal(lastFetchOptions.headers["Authorization"], "Bearer caller-m2m-token")
+  })
+
+  it("Uses the instance token upstream when no Authorization header is supplied.", async () => {
+    const response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 201)
+    assert.match(lastFetchOptions.headers["Authorization"], /^Bearer /)
+    assert.ok(lastFetchOptions.headers["Authorization"] !== "Bearer caller-m2m-token")
+  })
+
+  it("Rejects caller tokens with 403 when passthrough is disabled.", async () => {
+    process.env.ALLOW_PASSTHROUGH_TOKENS = "false"
+    try {
+      const response = await request(routeTester)
+        .post("/create")
+        .set("Content-Type", "application/json")
+        .set("Authorization", "Bearer caller-m2m-token")
+        .send({ test: "item" })
+
+      assert.equal(response.statusCode, 403)
+      assert.equal(lastFetchUrl, null, "upstream fetch must not happen when passthrough is rejected")
+      assert.match(response.text, /passthrough is not allowed/i)
+    }
+    finally {
+      delete process.env.ALLOW_PASSTHROUGH_TOKENS
+    }
+  })
+
+  it("Allows requests without a token when passthrough is disabled.", async () => {
+    process.env.ALLOW_PASSTHROUGH_TOKENS = "false"
+    try {
+      const response = await request(routeTester)
+        .post("/create")
+        .set("Content-Type", "application/json")
+        .send({ test: "item" })
+
+      assert.equal(response.statusCode, 201)
+      assert.match(lastFetchOptions.headers["Authorization"], /^Bearer /)
+    }
+    finally {
+      delete process.env.ALLOW_PASSTHROUGH_TOKENS
+    }
+  })
+
+  it("Passes upstream 401/403 through with real status for passthrough requests.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized: bad or expired access token"
+    })
+
+    let response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "******")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 401)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    global.fetch = async () => ({
+      ok: false,
+      status: 403,
+      text: async () => "Forbidden"
+    })
+
+    response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "******")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 403)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+  })
+
+  it("Maps upstream 401/403 to 502 for instance-token requests.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized: bad or expired access token"
+    })
+
+    let response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^401:/)
+    assert.match(response.text, /Unauthorized/)
+
+    global.fetch = async () => ({
+      ok: false,
+      status: 403,
+      text: async () => "Forbidden"
+    })
+
+    response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "application/json")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /^403:/)
+    assert.match(response.text, /Forbidden/)
+  })
+})
+
+describe('Keeps 502 for other upstream failures so passthrough errors stay distinguishable.', () => {
+  it("Keeps 502 for other upstream failures so passthrough errors stay distinguishable.", async () => {
+    global.fetch = async () => ({
+      ok: false,
+      status: 500,
+      text: async () => "Upstream blew up"
+    })
+
+    const response = await request(routeTester)
+      .post("/create")
+      .set("Content-Type", "application/json")
+      .set("Authorization", "Bearer caller-m2m-token")
+      .send({ test: "item" })
+
+    assert.equal(response.statusCode, 502)
+    assert.match(response.text, /Upstream blew up/)
+  })
+})
+
 describe("Check that the properly used create endpoints function and interact with RERUM.  __e2e", () => {
   it("'/create' route can save an object to RERUM.", async () => {
     const response = await request(routeTester)

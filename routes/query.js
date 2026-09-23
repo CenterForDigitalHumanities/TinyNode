@@ -1,6 +1,7 @@
 import express from "express"
 import { httpError, verifyJsonContentType } from "../rest.js"
 import { fetchRerum } from "../rerum.js"
+import { resolveAuthorization } from "./helpers/passthrough.js"
 const router = express.Router()
 
 const PAGINATION_HEADERS = ["Pagination-Limit", "Pagination-Skip", "Pagination-Limit-Max", "Pagination-Skip-Max"]
@@ -31,7 +32,7 @@ router.post('/', verifyJsonContentType, async (req, res, next) => {
       headers: {
         'user-agent': 'Tiny-Things/1.0',
         'Origin': process.env.ORIGIN,
-        'Authorization': `Bearer ${process.env.ACCESS_TOKEN}`, // not required for query
+        'Authorization': resolveAuthorization(req), // not required for query
         'Content-Type' : "application/json;charset=utf-8"
       }
     }

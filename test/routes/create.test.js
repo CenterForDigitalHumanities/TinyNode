@@ -253,7 +253,7 @@ describe("Check that the create route passes caller tokens through to RERUM.  __
     let response = await request(routeTester)
       .post("/create")
       .set("Content-Type", "application/json")
-      .set("Authorization", "******")
+      .set("Authorization", "caller-token")
       .send({ test: "item" })
 
     assert.equal(response.statusCode, 401)
@@ -269,7 +269,7 @@ describe("Check that the create route passes caller tokens through to RERUM.  __
     response = await request(routeTester)
       .post("/create")
       .set("Content-Type", "application/json")
-      .set("Authorization", "******")
+      .set("Authorization", "caller-token")
       .send({ test: "item" })
 
     assert.equal(response.statusCode, 403)
@@ -308,9 +308,7 @@ describe("Check that the create route passes caller tokens through to RERUM.  __
     assert.match(response.text, /^403:/)
     assert.match(response.text, /Forbidden/)
   })
-})
 
-describe('Keeps 502 for other upstream failures so passthrough errors stay distinguishable.', () => {
   it("Keeps 502 for other upstream failures so passthrough errors stay distinguishable.", async () => {
     global.fetch = async () => ({
       ok: false,

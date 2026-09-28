@@ -2,7 +2,7 @@ import dotenv from "dotenv"
 dotenv.config()
 import fs from "node:fs/promises"
 import { parse, stringify } from "envfile"
-import { isPassthroughRequest } from "./routes/helpers/passthrough.js"
+import { isPassthroughRequest } from "./passthrough.js"
 
 const sourcePath = '.env'
 

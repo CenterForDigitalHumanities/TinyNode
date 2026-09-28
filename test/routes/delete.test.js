@@ -226,7 +226,7 @@ describe("Check that the delete route passes caller tokens through to RERUM.  __
     let response = await request(routeTester)
       .delete("/delete")
       .set("Content-Type", "application/json")
-      .set("Authorization", "******")
+      .set("Authorization", "caller-token")
       .send({ "@id": rerumUri })
 
     assert.equal(response.statusCode, 401)
@@ -235,7 +235,7 @@ describe("Check that the delete route passes caller tokens through to RERUM.  __
 
     response = await request(routeTester)
       .delete("/delete/00000")
-      .set("Authorization", "******")
+      .set("Authorization", "caller-token")
 
     assert.equal(response.statusCode, 401)
     assert.match(response.text, /^401:/)
@@ -250,7 +250,7 @@ describe("Check that the delete route passes caller tokens through to RERUM.  __
     response = await request(routeTester)
       .delete("/delete")
       .set("Content-Type", "application/json")
-      .set("Authorization", "******")
+      .set("Authorization", "caller-token")
       .send({ "@id": rerumUri })
 
     assert.equal(response.statusCode, 403)
@@ -259,7 +259,7 @@ describe("Check that the delete route passes caller tokens through to RERUM.  __
 
     response = await request(routeTester)
       .delete("/delete/00000")
-      .set("Authorization", "******")
+      .set("Authorization", "caller-token")
 
     assert.equal(response.statusCode, 403)
     assert.match(response.text, /^403:/)

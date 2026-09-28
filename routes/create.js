@@ -2,7 +2,7 @@ import express from "express"
 import checkAccessToken from "../tokens.js"
 import { httpError, verifyJsonContentType } from "../rest.js"
 import { createRerumNetworkError, fetchRerum } from "../rerum.js"
-import { isPassthroughRequest, requirePassthroughAllowed, resolveAuthorization } from "./helpers/passthrough.js"
+import { isPassthroughRequest, requirePassthroughAllowed, resolveAuthorization } from "../passthrough.js"
 const router = express.Router()
 
 /* POST a create to the thing. */

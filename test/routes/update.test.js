@@ -207,7 +207,7 @@ describe("Check that the update route passes caller tokens through to RERUM.  __
     let response = await request(routeTester)
       .put("/update")
       .set("Content-Type", "application/json")
-      .set("Authorization", "******")
+      .set("Authorization", "caller-token")
       .send({ "@id": rerumUriOrig, testing: "item" })
 
     assert.equal(response.statusCode, 401)
@@ -223,7 +223,7 @@ describe("Check that the update route passes caller tokens through to RERUM.  __
     response = await request(routeTester)
       .put("/update")
       .set("Content-Type", "application/json")
-      .set("Authorization", "******")
+      .set("Authorization", "caller-token")
       .send({ "@id": rerumUriOrig, testing: "item" })
 
     assert.equal(response.statusCode, 403)

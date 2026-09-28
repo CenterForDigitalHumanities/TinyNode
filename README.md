@@ -83,7 +83,7 @@ OPEN_API_CORS = true
 **Note:** If you leave `index.html` in the app code it is possible that users will be able to navigate to this page and experience a front end.  This is either a bug or a feature...if you don't want users to end up in a front end then remove or rename the `index.html` file.  
 
 ### Passthrough Token Mode
-A registered application can make machine-to-machine calls through a running TinyNode without cloning the whole thing.  Send your own registered access token in the `Authorization` header of any `/create`, `/update`, `/overwrite`, `/delete`, or `/query` request:
+A registered application can make machine-to-machine calls through a running TinyNode without cloning the whole thing.  Send your own registered access token in the `Authorization` header of any `/create`, `/update`, `/overwrite`, or `/delete` request:
 
 ```shell
 curl -X POST https://tiny.rerum.io/create \

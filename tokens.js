@@ -88,4 +88,29 @@ async function checkAccessToken(req, res, next) {
     
 }
 
-export default checkAccessToken
+export default function checkAccessToken(req, res, next) {
+  // If request carries an Authorization header, treat it as passthrough and skip instance token checks/refresh
+  if (req.headers?.authorization) {
+    return next();
+  }
+  // Existing logic for instance token handling
+  (async () => {
+    try {
+      if(!process?.env?.ACCESS_TOKEN) {
+        next();
+        return;
+      }
+      if (isTokenExpired(process.env.ACCESS_TOKEN)) {
+        console.log("TinyNode detected an expired access token.  Updating the token now.");
+        await generateNewAccessToken();
+      }
+      next();    
+    }
+    catch (err) {
+      console.log("TinyNode encountered an error trying to refresh its access token");
+      console.error(err);
+      next(err);
+    }
+  })();
+}
+

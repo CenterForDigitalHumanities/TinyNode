@@ -1,11 +1,12 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
+import { resolveAuthorization, requirePassthroughAllowed } from "../passthrough.js"
 import { verifyJsonContentType } from "../rest.js"
 import { fetchRerum } from "../rerum.js"
 const router = express.Router()
 
 /* Legacy delete pattern w/body. */
-router.delete('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
+router.delete('/', verifyJsonContentType, requirePassthroughAllowed, checkAccessToken, async (req, res, next) => {
   try {
     if (!req?.body || !(req.body['@id'] ?? req.body.id)) {
       const err = new Error("No record id to delete! (https://store.rerum.io/v1/API.html#delete)")
@@ -47,7 +48,7 @@ router.delete('/', verifyJsonContentType, checkAccessToken, async (req, res, nex
 })
 
 /* DELETE an object by ID via the RERUM API. */
-router.delete('/:id', checkAccessToken, async (req, res, next) => {
+router.delete('/:id', requirePassthroughAllowed, checkAccessToken, async (req, res, next) => {
   try {
   
     const deleteURL = `${process.env.RERUM_API_ADDR}delete/${req.params.id}`

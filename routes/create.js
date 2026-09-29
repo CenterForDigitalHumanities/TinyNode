@@ -1,11 +1,12 @@
 import express from "express"
 import checkAccessToken from "../tokens.js"
+import { resolveAuthorization, requirePassthroughAllowed } from "../passthrough.js"
 import { verifyJsonContentType } from "../rest.js"
 import { createRerumNetworkError, fetchRerum } from "../rerum.js"
 const router = express.Router()
 
 /* POST a create to the thing. */
-router.post('/', verifyJsonContentType, checkAccessToken, async (req, res, next) => {
+router.post('/', verifyJsonContentType, requirePassthroughAllowed, checkAccessToken, async (req, res, next) => {
 
   try {
     // if an id is passed in, pop off the end to make it an _id
@@ -25,7 +26,8 @@ router.post('/', verifyJsonContentType, checkAccessToken, async (req, res, next)
         'Content-Type' : "application/json;charset=utf-8"
       }
     }
-    const createURL = `${process.env.RERUM_API_ADDR}create`
+    createOptions.headers['Authorization'] = resolveAuthorization(req);
+const createURL = `${process.env.RERUM_API_ADDR}create`
     const rerumResponse = await fetchRerum(createURL, createOptions)
     .then(async (resp) => {
       if (resp.ok) return resp.json()

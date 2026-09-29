@@ -253,7 +253,7 @@ describe("Check that the create route passes caller tokens through to RERUM.  __
     let response = await request(routeTester)
       .post("/create")
       .set("Content-Type", "application/json")
-      .set("Authorization", "caller-token")
+      .set("Authorization", "Bearer bad-or-expired-token")
       .send({ test: "item" })
 
     assert.equal(response.statusCode, 401)
@@ -269,7 +269,7 @@ describe("Check that the create route passes caller tokens through to RERUM.  __
     response = await request(routeTester)
       .post("/create")
       .set("Content-Type", "application/json")
-      .set("Authorization", "caller-token")
+      .set("Authorization", "Bearer bad-or-expired-token")
       .send({ test: "item" })
 
     assert.equal(response.statusCode, 403)

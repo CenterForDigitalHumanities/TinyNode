@@ -29,7 +29,7 @@ components:
         whose body starts with "401:" or "403:" and includes RERUM's message,
         the same as any other upstream RERUM error. Operators can reject
         passthrough with ALLOW_PASSTHROUGH_TOKENS=false, which answers 403 for
-        any request carrying this header.
+        any modification request carrying this header.
   schemas:
     HealthResponse:
       type: object

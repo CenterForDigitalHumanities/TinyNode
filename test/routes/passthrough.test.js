@@ -73,9 +73,9 @@ describe("Passthrough helper behavior.  __core __mock_functions", () => {
     })
 
     it("resolveAuthorization uses the caller's header verbatim when passthrough is allowed.", () => {
-        const req = { headers: { authorization: "caller-token" } }
+        const req = { headers: { authorization: "Bearer caller-token" } }
         process.env.ACCESS_TOKEN = "instance-token"
-        assert.equal(resolveAuthorization(req), "caller-token")
+        assert.equal(resolveAuthorization(req), "Bearer caller-token")
     })
 
     it("resolveAuthorization preserves non-Bearer schemes verbatim.", () => {
@@ -92,7 +92,7 @@ describe("Passthrough helper behavior.  __core __mock_functions", () => {
     it("resolveAuthorization ignores the caller's token when passthrough is disabled.", () => {
         process.env.ALLOW_PASSTHROUGH_TOKENS = "false"
         process.env.ACCESS_TOKEN = "instance-token"
-        const req = { headers: { authorization: "caller-token" } }
+        const req = { headers: { authorization: "Bearer caller-token" } }
         assert.equal(resolveAuthorization(req), "Bearer instance-token")
     })
 })
@@ -110,7 +110,7 @@ describe("Passthrough guard middleware behavior.  __core __mock_functions", () =
 
     it("Calls next() when an Authorization header is present and passthrough is allowed.", () => {
         let called = 0
-        requirePassthroughAllowed({ headers: { authorization: "caller-token" } }, {}, err => {
+        requirePassthroughAllowed({ headers: { authorization: "Bearer caller-token" } }, {}, err => {
             assert.equal(err, undefined)
             called += 1
         })
@@ -120,7 +120,7 @@ describe("Passthrough guard middleware behavior.  __core __mock_functions", () =
     it("Rejects with 403 when a token is supplied and passthrough is disabled.", () => {
         process.env.ALLOW_PASSTHROUGH_TOKENS = "false"
         let receivedError
-        requirePassthroughAllowed({ headers: { authorization: "caller-token" } }, {}, err => {
+        requirePassthroughAllowed({ headers: { authorization: "Bearer caller-token" } }, {}, err => {
             receivedError = err
         })
         assert.ok(receivedError, "guard must hand an error to next()")
@@ -138,7 +138,7 @@ describe("Passthrough interaction with checkAccessToken.  __core __mock_function
         }
 
         let nextError
-        await checkAccessToken({ headers: { authorization: "caller-token" } }, {}, err => {
+        await checkAccessToken({ headers: { authorization: "Bearer caller-token" } }, {}, err => {
             nextError = err
         })
 
@@ -188,7 +188,7 @@ REFRESH_TOKEN=refresh-token`)
             }
 
             let nextError
-            await checkAccessToken({ headers: { authorization: "caller-token" } }, {}, err => {
+            await checkAccessToken({ headers: { authorization: "Bearer caller-token" } }, {}, err => {
                 nextError = err
             })
 

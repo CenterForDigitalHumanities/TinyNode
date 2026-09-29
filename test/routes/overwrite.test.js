@@ -132,7 +132,7 @@ describe("Overwrite conflict and header contract behavior.  __rest __core", () =
     let response = await request(routeTester)
       .put("/overwrite")
       .set("Content-Type", "application/json")
-      .set("Authorization", "caller-token")
+      .set("Authorization", "Bearer bad-or-expired-token")
       .send({ "@id": rerumTinyTestObjId, testing: "item" })
 
     assert.equal(response.statusCode, 401)
@@ -148,7 +148,7 @@ describe("Overwrite conflict and header contract behavior.  __rest __core", () =
     response = await request(routeTester)
       .put("/overwrite")
       .set("Content-Type", "application/json")
-      .set("Authorization", "caller-token")
+      .set("Authorization", "Bearer bad-or-expired-token")
       .send({ "@id": rerumTinyTestObjId, testing: "item" })
 
     assert.equal(response.statusCode, 403)

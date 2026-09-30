@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: TinyNode Shared Components
-  version: 0.1.0-alpha.1
+  version: 0.2.0-alpha.1
   description: >-
     Shared schema components reused by multiple TinyNode seams. TinyNode route
     handlers are sourced from CenterForDigitalHumanities/TinyNode routes/
@@ -14,6 +14,15 @@ x-upstream-provider:
   name: rerum_server_nodejs
   baseUrl: https://store.rerum.io/v1
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >-
+        Caller-supplied RERUM access token. When present on a modification
+        request, TinyNode forwards it upstream verbatim and the write is
+        attributed to the caller's registered agent instead of the instance's
+        agent.
   schemas:
     HealthResponse:
       type: object

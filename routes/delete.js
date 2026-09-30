@@ -29,8 +29,6 @@ router.delete('/', verifyJsonContentType, requirePassthroughAllowed, checkAccess
     await fetchRerum(deleteURL, deleteOptions)
     .then(async (resp) => {
       if (resp.ok) return
-      // For actual passthrough requests, let callers see RERUM's 401/403 directly
-      // so they can debug their own tokens.  Otherwise keep TinyNode's 502 contract.
       if (isPassthroughRequest(req) && (resp.status === 401 || resp.status === 403)) {
         let rerumAuthMessage
         try {
@@ -74,8 +72,6 @@ router.delete('/:id', requirePassthroughAllowed, checkAccessToken, async (req, r
     await fetchRerum(deleteURL, deleteOptions)
     .then(async (resp) => {
       if (resp.ok) return
-      // For actual passthrough requests, let callers see RERUM's 401/403 directly
-      // so they can debug their own tokens.  Otherwise keep TinyNode's 502 contract.
       if (isPassthroughRequest(req) && (resp.status === 401 || resp.status === 403)) {
         let rerumAuthMessage
         try {

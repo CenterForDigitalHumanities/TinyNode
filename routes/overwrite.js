@@ -51,8 +51,6 @@ router.put('/', verifyJsonContentType, requirePassthroughAllowed, checkAccessTok
         err.body = conflictBody
         throw err
       }
-      // For actual passthrough requests, let callers see RERUM's 401/403 directly
-      // so they can debug their own tokens.  Otherwise keep TinyNode's 502 contract.
       if (isPassthroughRequest(req) && (resp.status === 401 || resp.status === 403)) {
         let rerumAuthMessage
         try {

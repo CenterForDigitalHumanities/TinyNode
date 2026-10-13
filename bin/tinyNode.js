@@ -16,7 +16,7 @@ import http from "http"
  * Get port from environment and store in Express.
  */
 
-const port = normalizePort(process.env.PORT || '3002')
+const port = normalizePort(process.env.PORT) || 3002
 app.set('port', port)
 
 /**
@@ -34,19 +34,13 @@ server.on('error', onError)
 server.on('listening', onListening)
 
 /**
- * Normalize a port into a number, string, or false.
+ * Normalize a port into a valid TCP port number or false.
  */
 
 function normalizePort(val) {
-  const port = parseInt(val, 10)
+  const port = Number(val)
 
-  if (isNaN(port)) {
-    // named pipe
-    return val
-  }
-
-  if (port >= 0) {
-    // port number
+  if (Number.isInteger(port) && port >= 1 && port <= 65535) {
     return port
   }
 

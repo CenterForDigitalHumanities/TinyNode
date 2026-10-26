@@ -16,7 +16,9 @@ import http from "http"
  * Get port from environment and store in Express.
  */
 
-const port = normalizePort(process.env.PORT) || 3002
+const envPort = normalizePort(process.env.PORT)
+if (process.env.PORT && !envPort) console.warn(`Invalid PORT "${process.env.PORT}", using 3002`)
+const port = envPort || 3002
 app.set('port', port)
 
 /**
@@ -56,9 +58,7 @@ function onError(error) {
     throw error
   }
 
-  const bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port
+  const bind = 'Port ' + port
 
   // handle specific listen errors with friendly messages
   switch (error.code) {
@@ -80,9 +80,5 @@ function onError(error) {
  */
 
 function onListening() {
-  const addr = server.address()
-  const bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port
-  console.log('Listening on ' + bind)
+  console.log('Listening on port ' + server.address().port)
 }

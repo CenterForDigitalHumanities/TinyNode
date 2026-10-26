@@ -59,6 +59,30 @@ describe("Check that the request/response behavior of the TinyNode delete route 
     assert.match(lastFetchUrl, /\/delete\/00000$/, "URL should end with /delete/00000")
     assert.equal(lastFetchOptions.method, "DELETE", "Method should be DELETE")
   })
+
+  it("Extracts the record id from the body 'id' key and from an encoded URI in the path.", async () => {
+    let response = await request(routeTester)
+      .delete("/delete")
+      .send({ id: rerumUri })
+      .set("Content-Type", "application/json")
+
+    assert.equal(response.statusCode, 204)
+    assert.match(lastFetchUrl, /\/delete\/_not_$/, "URL should end with /delete/_not_")
+
+    response = await request(routeTester)
+      .delete(`/delete/${encodeURIComponent(rerumUri)}`)
+
+    assert.equal(response.statusCode, 204)
+    assert.match(lastFetchUrl, /\/delete\/_not_$/, "URL should end with /delete/_not_")
+
+    response = await request(routeTester)
+      .delete("/delete")
+      .send({ "@id": `${rerumUri}?x=1#f` })
+      .set("Content-Type", "application/json")
+
+    assert.equal(response.statusCode, 204)
+    assert.match(lastFetchUrl, /\/delete\/_not_%3Fx%3D1%23f$/, "id should be URI encoded upstream")
+  })
 })
 
 describe("Check that incorrect TinyNode delete route usage results in expected RESTful responses from RERUM.  __rest __core", () => {
@@ -87,6 +111,7 @@ describe("Check that incorrect TinyNode delete route usage results in expected R
       .send("plain text")
     assert.equal(response.statusCode, 415)
   })
+
 })
 
 describe("Delete network failure and passthrough behavior.  __rest __core", () => {

@@ -13,11 +13,7 @@ async function deleteRecord(req, res) {
       err.status = 400
       throw err
     }
-
-    const isPathDelete = Boolean(req.params.id)
-    const deleteURL = isPathDelete
-      ? `${process.env.RERUM_API_ADDR}delete/${req.params.id}`
-      : `${process.env.RERUM_API_ADDR}delete`
+    const deleteURL = `${process.env.RERUM_API_ADDR}delete/${id}`
     const deleteOptions = {
       method: 'DELETE',
       headers: {
@@ -26,11 +22,6 @@ async function deleteRecord(req, res) {
         'Authorization': resolveAuthorization(req)
       }
     }
-    if (!isPathDelete) {
-      deleteOptions.body = JSON.stringify(req.body)
-      deleteOptions.headers['Content-Type'] = "application/json; charset=utf-8"
-    }
-
     await fetchRerum(deleteURL, deleteOptions)
     .then(async (resp) => {
       if (resp.ok) return

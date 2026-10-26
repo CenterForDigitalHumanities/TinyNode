@@ -111,7 +111,6 @@ describe("Check that incorrect TinyNode delete route usage results in expected R
       .send("plain text")
     assert.equal(response.statusCode, 415)
   })
-
 })
 
 describe("Delete network failure and passthrough behavior.  __rest __core", () => {

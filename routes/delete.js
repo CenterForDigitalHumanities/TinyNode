@@ -7,12 +7,13 @@ const router = express.Router()
 
 async function deleteRecord(req, res) {
   try {
-    const id = req.params.id ?? req.body?.['@id'] ?? req.body?.id
-    if (!id) {
+    const uri = req.params.id ?? req.body?.['@id'] ?? req.body?.id
+    if (!uri) {
       const err = new Error("No record id to delete! (https://store.rerum.io/v1/API.html#delete)")
       err.status = 400
       throw err
     }
+    const id = uri.split("/").pop()
     const deleteURL = `${process.env.RERUM_API_ADDR}delete/${id}`
     const deleteOptions = {
       method: 'DELETE',
